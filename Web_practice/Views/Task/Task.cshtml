@@ -1,0 +1,79 @@
+﻿@model Web_practice.Models.Pages.Task.TaskModel
+
+@{
+    ViewData["Title"] = "Task";
+}
+
+<h1>Task: @Model.Exe.Title</h1>
+
+<hr />
+<div class="row">
+	<div class="col-md-4">
+		<form asp-action="Task" method="get">
+			<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+			<div class="form-group">
+				<input type="submit" value="стартуем" class="btn btn-primary" />
+			</div>
+		</form>
+	</div>
+	<div class="col-md-4">
+		<form asp-action="Task" method="get">
+			<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+			<div class="form-group">
+				<input type="submit" value="результаты" class="btn btn-primary" />
+			</div>
+		</form>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-4">
+		<form asp-action="AdditionTask" method="get">
+			<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+			<div class="form-group">
+				<input type="submit" value="редактировать" class="btn btn-primary" />
+			</div>
+		</form>
+	</div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Test" asp-controller="Task" method="get">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <input type="submit" value="добавить тест" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="main">
+	<div class="inner">
+		<!-- Boxes -->
+		<div class="thumbnails">
+			@foreach (var test in Model.Tests)
+			{
+				<div class="box">
+					<div class="inner">
+						<h3>@test.Title</h3>
+						<form asp-controller="Task" asp-action="TestRedaction" method="get">
+							<button type="submit" class="button fit" name="IdEncode" value="@test.Id">открыть</button>
+						</form>
+						<form asp-controller="Task" asp-action="DeleteTest" method="post">
+							<button type="submit" class="button fit" name="IdEncode" value="@test.Id" >удалить</button>
+						</form>
+					</div>
+				</div>
+			}
+		</div>
+	</div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

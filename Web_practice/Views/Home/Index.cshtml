@@ -1,0 +1,50 @@
+﻿@model Web_practice.Models.Pages.Index
+@{
+	ViewData["Title"] = "Index";
+}
+@{
+	ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+	<h1 class="display-4">Welcome</h1>
+	<p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+</div>
+
+<div class="limiter">
+	<div class="container-login100">
+		<div class="wrap-login100">
+			<form class="login100-form p-l-55 p-r-55 p-t-178 validate-form" asp-antiforgery="true" asp-action="Profile" asp-controller="Account" method="post">
+				<span class="login100-form-title">
+					Добро пожаловать!
+				</span>
+				<div class="text-danger">@ViewBag.Error</div>
+				<div asp-validation-summary="ModelOnly" />
+				<div class="wrap-input100 m-b-16 validate-input" data-validate="Введите ваш Логин">
+					<input class="input100" type="text" asp-for="Login" placeholder="Username" />
+					@*<span class="focus-input100"></span>*@
+				</div>
+				<div class="wrap-input100 m-b-16 validate-input" data-validate="Введите ваш Пароль">
+					<input class="input100" type="password" asp-for="Password" placeholder="Password" />
+					@*<span class="focus-input100"></span>*@
+				</div>
+
+				<div class="container-login100-form-btn">
+					<button class="login100-form-btn" type="submit">
+						Войти
+					</button>
+				</div>
+
+				<div class="flex-col-c p-t-10 p-b-40">
+					<span class="txt1 p-b-9">
+						Нет аккаунта?
+					</span>
+
+					<a asp-action="Registration" asp-controller="Account" class="txt3">
+						Зарегистрироваться!
+					</a>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>

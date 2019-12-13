@@ -1,0 +1,54 @@
+﻿@model Web_practice.Models.Pages.Task.AdditionTaskModel
+
+@{
+	ViewData["Title"] = "AdditionTask";
+}
+
+<h1>AdditionTask</h1>
+<hr />
+
+<div class="my-panel panel panel-success">
+	<div class="panel-heading text-center"><h4>добавить задание</h4></div>
+	<div class="panel-body">
+		<form asp-action="Task" asp-controller="Task" method="post" enctype="multipart/form-data">
+			<div class="validation" asp-validation-summary="ModelOnly" />
+			<div class="form-group">
+				<label class="field-labels" asp-for="Title">Название:</label>
+				<input type="text" asp-for="Title" />
+				<span asp-validation-for="Title" class="text-danger" />
+			</div>
+			<div class="form-group">
+				<label class="field-labels" asp-for="Executable">Программа:</label>
+				<input type="file" asp-for="Executable" />
+				<span asp-validation-for="Executable" class="text-danger" />
+			</div>
+			<div class="form-group">
+				<label class="field-labels" asp-for="Comparator">компаратор:</label>
+				<input type="file" asp-for="Comparator" />
+				<span asp-validation-for="Comparator" class="text-danger" />
+			</div>
+			<div class="text-center">
+				<button class="btn bg-primary" type="submit">Создать!</button>
+			</div>
+		</form>
+		@if (Model.Messages.Count != 0)
+		{
+			<h3>Список ошибок:</h3>
+			<div class="scroll">
+				@foreach (var message in Model.Messages)
+				{
+					<p class="text-danger">@message</p>
+				}
+			</div>
+		}
+	</div>
+</div>
+
+
+<div>
+	<a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+	@{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

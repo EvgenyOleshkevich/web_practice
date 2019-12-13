@@ -1,0 +1,42 @@
+﻿@model Web_practice.Models.Pages.Account.ProfileModel
+
+@{
+	ViewData["Title"] = "Profile";
+}
+
+<h1>Profile</h1>
+
+<hr />
+
+<div class="row">
+	<div class="col-md-4">
+		<form asp-controller="Task" asp-action="AdditionTask" method="get">
+			<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+			<div class="form-group">
+				<input type="submit" value="add task" class="btn btn-primary" />
+			</div>
+		</form>
+	</div>
+</div>
+
+<div id="main">
+	<div class="inner">
+		<!-- Boxes -->
+		<div class="thumbnails">
+			@foreach (var task in Model.Tasks)
+			{
+				<div class="box">
+					<div class="inner">
+						<form asp-controller="Task" asp-action="Task" method="post">
+							<button type="submit" class="button fit" name="IdEncode" value="@task.Id">@task.Title</button>
+						</form>
+					</div>
+				</div>
+			}
+		</div>
+	</div>
+</div>
+
+@section Scripts {
+	@{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
