@@ -27,6 +27,6 @@ namespace Web_practice.Models.DB
 		[Required]
 		public string PathAvatar { get; set; }
 
-		public IList<TaskData> Executables { get; set; }
+		public IList<TaskData> Tasks { get; set; }
 	}
 }

@@ -7,7 +7,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Web_practice.Models.DB
 {
-	public class Statistic
+	public class StatisticData
 	{
 		[Key]
 		public int Id { get; set; }

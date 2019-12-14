@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace Web_practice.Models.Pages
 {
-	public class Index
+	public class IndexModel
 	{
-		//[Required(ErrorMessage = "Не указан логин")]
+		[Required(ErrorMessage = "Не указан логин")]
 		public string Login { get; set; }
 
-		//[Required(ErrorMessage = "Не указан пароль")]
-		//[DataType(DataType.Password)]
+		[Required(ErrorMessage = "Не указан пароль")]
+		[DataType(DataType.Password)]
 		public string Password { get; set; }
 	}
 }

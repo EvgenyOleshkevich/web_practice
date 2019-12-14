@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.DataProtection;
 using System;
 
-namespace WebVisualGame_MVC.Utilities
+namespace Web_practice.Utilities
 {
 	public class ProtectData
 	{

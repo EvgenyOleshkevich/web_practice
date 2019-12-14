@@ -1,15 +1,17 @@
-﻿@model Web_practice.Models.Pages.Account.RegistrationModel
+﻿@model Web_practice.Models.Pages.Account.ProfileSettingsModel
 
 @{
-    ViewData["Title"] = "Registration";
+	ViewData["Title"] = "ProfileSettings";
 }
 
-<h1>Registration</h1>
+<h1>ProfileSettings</h1>
+
 <hr />
 
 <div class="my-panel panel panel-success">
+	<div class="panel-heading text-center"><h4>Редактирование профиля</h4></div>
 	<div class="panel-body">
-		<form asp-action="Registration" asp-controller="Account" method="post">
+		<form asp-action="ProfileSettings" asp-controller="Account" method="post" enctype="multipart/form-data">
 			<div class="validation" asp-validation-summary="ModelOnly" />
 			<ul class="text-danger">
 				@foreach (var error in Model.Errors)
@@ -38,27 +40,28 @@
 				<span asp-validation-for="userInfo.ConfirmPassword" class="text-danger" />
 			</div>
 			<div class="text-center">
-				<button class="btn bg-primary" type="submit">Зарегистрироваться!</button>
+				<button class="btn bg-primary" type="submit">Изменить!</button>
 			</div>
 		</form>
 	</div>
 </div>
 
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Registration">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
-    </div>
-</div>
+<form asp-controller="Account" asp-action="ProfileDelete" method="post">
+	<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+	<div class="form-group">
+		<span asp-validation-for="userInfo.Login" class="text-danger" />
+		<span asp-validation-for="userInfo.Email" class="text-danger" />
+		<span asp-validation-for="userInfo.Password" class="text-danger" />
+		<span asp-validation-for="userInfo.ConfirmPassword" class="text-danger" />
+		<input type="submit" value="Удалить" class="btn btn-primary" />
+	</div>
+</form>
+
 
 <div>
-    <a asp-action="Index">Back to List</a>
+	<a asp-action="Index">Back to List</a>
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+	@{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }

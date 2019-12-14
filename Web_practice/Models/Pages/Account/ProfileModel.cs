@@ -9,32 +9,8 @@ namespace Web_practice.Models.Pages.Account
 {
 	public class ProfileModel
 	{
-		public ProfileModel()
-		{
-			Errors = new List<string>();
-			Gen_task(5);
-			
-		}
-
-		public List<string> Errors { get; set; }
-
-
 		public UserData User { get; set; }
 
-		public List<ExecutableData> Tasks { get; set; }
-
-		private void Gen_task(int count)
-		{
-			Tasks = new List<ExecutableData>();
-			for (int i = 0; i < count; ++i)
-			{
-				var task = new ExecutableData()
-				{
-					Title = "program " + i.ToString(),
-					Id = i
-				};
-				Tasks.Add(task);
-			}
-		}
+		public List<TaskData> Tasks { get; set; }
 	}
 }
