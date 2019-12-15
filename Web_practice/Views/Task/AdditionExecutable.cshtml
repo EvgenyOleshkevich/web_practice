@@ -1,34 +1,36 @@
-﻿@model Web_practice.Models.Pages.Task.AdditionTaskModel
+﻿@model Web_practice.Models.Pages.Task.AdditionExecutableModel
 
 @{
-	ViewData["Title"] = "AdditionTask";
+	ViewData["Title"] = "AdditionExecutable";
 }
 
-<h1>AdditionTask</h1>
-<hr />
+<h1>AdditionExecutable</h1>
 
+<hr />
 <div class="my-panel panel panel-success">
-	<div class="panel-heading text-center"><h4>добавить задание</h4></div>
+	<div class="panel-heading text-center"><h4>добавить исполняемый файл</h4></div>
 	<div class="panel-body">
-		<form asp-action="AdditionTask" asp-controller="Task" method="post" enctype="multipart/form-data">
+		<form asp-action="AdditionExecutable" asp-controller="Task" method="post" enctype="multipart/form-data">
 			<div class="validation" asp-validation-summary="ModelOnly" />
 			<div class="form-group">
 				<label class="field-labels" asp-for="Title">Название:</label>
 				<input type="text" asp-for="Title" />
 				<span asp-validation-for="Title" class="text-danger" />
 			</div>
-			@*<div class="form-group">
+			<div class="form-group">
 				<label class="field-labels" asp-for="Executable">Программа:</label>
 				<input type="file" asp-for="Executable" />
 				<span asp-validation-for="Executable" class="text-danger" />
-			</div>*@
+			</div>
 			<div class="form-group">
-				<label class="field-labels" asp-for="Comparator">компаратор:</label>
-				<input type="file" asp-for="Comparator" />
-				<span asp-validation-for="Comparator" class="text-danger" />
+				<label class="field-labels" asp-for="InterpolationString">InterpolationString:</label>
+				<input type="text" asp-for="InterpolationString" />
+				<span asp-validation-for="InterpolationString" class="text-danger" />
 			</div>
 			<div class="text-center">
-				<button class="btn bg-primary" type="submit">Создать!</button>
+				<button class="btn bg-primary" type="submit" name="taskIdEncode" value="@Model.TaskIdEncod">
+					Создать!
+				</button>
 			</div>
 		</form>
 		@if (Model.Errors.Count != 0)
@@ -43,7 +45,6 @@
 		}
 	</div>
 </div>
-
 
 <div>
 	<a asp-action="Index">Back to List</a>

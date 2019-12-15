@@ -4,27 +4,10 @@
     ViewData["Title"] = "Task";
 }
 
-<h1>Task: @Model.Exe.Title</h1>
+<h1>Task: @Model.Task.Title</h1>
 
 <hr />
-<div class="row">
-	<div class="col-md-4">
-		<form asp-action="Task" method="get">
-			<div asp-validation-summary="ModelOnly" class="text-danger"></div>
-			<div class="form-group">
-				<input type="submit" value="стартуем" class="btn btn-primary" />
-			</div>
-		</form>
-	</div>
-	<div class="col-md-4">
-		<form asp-action="Task" method="get">
-			<div asp-validation-summary="ModelOnly" class="text-danger"></div>
-			<div class="form-group">
-				<input type="submit" value="результаты" class="btn btn-primary" />
-			</div>
-		</form>
-	</div>
-</div>
+
 
 <div class="row">
 	<div class="col-md-4">
@@ -38,17 +21,52 @@
 </div>
 
 <div class="row">
-    <div class="col-md-4">
-        <form asp-action="Test" asp-controller="Task" method="get">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <input type="submit" value="добавить тест" class="btn btn-primary" />
-            </div>
-        </form>
-    </div>
+	<div class="col-md-4">
+		<form asp-action="AdditionExecutable" asp-controller="Task" method="get">
+			<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+			<div class="form-group">
+				<button type="submit" class="btn btn-primary" name="taskIdEncode" value="@Web_practice.Utilities.ProtectData.GetInstance().Encode(Model.Task.Id)">добавить исполняемый файл</button>
+			</div>
+		</form>
+	</div>
+
+	<div class="col-md-4">
+		<form asp-action="AdditionTest" asp-controller="Task" method="get">
+			<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+			<div class="form-group">
+				<button type="submit" class="btn btn-primary" name="taskIdEncode" value="@Web_practice.Utilities.ProtectData.GetInstance().Encode(Model.Task.Id)">добавить тест</button>
+			</div>
+		</form>
+	</div>
 </div>
 
-<div id="main">
+
+<h4>executables</h4>
+<div id="executables">
+	<div class="inner">
+		<!-- Boxes -->
+		<div class="thumbnails">
+			@foreach (var exe in Model.Exes)
+			{
+				<div class="box">
+					<div class="inner">
+						<h3>@exe.Title</h3>
+						<form asp-controller="Task" asp-action="Executable" method="get">
+							<button type="submit" class="button fit" name="exeIdEncode" value="@Web_practice.Utilities.ProtectData.GetInstance().Encode(exe.Id)">открыть</button>
+						</form>
+						<form asp-controller="Task" asp-action="ExecutableDelete" method="post">
+							<button type="submit" class="button fit" name="exeIdEncode" value="@Web_practice.Utilities.ProtectData.GetInstance().Encode(exe.Id)">удалить</button>
+						</form>
+					</div>
+				</div>
+			}
+		</div>
+	</div>
+</div>
+
+
+<h4>тесты</h4>
+<div id="tests">
 	<div class="inner">
 		<!-- Boxes -->
 		<div class="thumbnails">
@@ -58,15 +76,28 @@
 					<div class="inner">
 						<h3>@test.Title</h3>
 						<form asp-controller="Task" asp-action="TestRedaction" method="get">
-							<button type="submit" class="button fit" name="IdEncode" value="@test.Id">открыть</button>
+							<button type="submit" class="button fit" name="testIdEncode" value="@Web_practice.Utilities.ProtectData.GetInstance().Encode(test.Id)">открыть</button>
 						</form>
-						<form asp-controller="Task" asp-action="DeleteTest" method="post">
-							<button type="submit" class="button fit" name="IdEncode" value="@test.Id" >удалить</button>
+						<form asp-controller="Task" asp-action="TestDelete" method="post">
+							<button type="submit" class="button fit" name="testIdEncode" value="@Web_practice.Utilities.ProtectData.GetInstance().Encode(test.Id)" >удалить</button>
 						</form>
 					</div>
 				</div>
 			}
 		</div>
+	</div>
+</div>
+
+<h4>danger zone</h4>
+
+<div class="row">
+	<div class="col-md-4">
+		<form asp-action="TaskDelete" asp-controller="Task" method="post">
+			<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+			<div class="form-group">
+				<button type="submit" class="button fit" name="taskIdEncode" value="@Web_practice.Utilities.ProtectData.GetInstance().Encode(Model.Task.Id)">Удалить задачу</button>
+			</div>
+		</form>
 	</div>
 </div>
 

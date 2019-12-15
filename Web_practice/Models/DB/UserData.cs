@@ -23,10 +23,5 @@ namespace Web_practice.Models.DB
 		[MaxLength(100)]
 		[Required]
 		public string Email { get; set; }
-
-		[Required]
-		public string PathAvatar { get; set; }
-
-		public IList<TaskData> Tasks { get; set; }
 	}
 }

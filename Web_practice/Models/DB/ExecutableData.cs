@@ -32,5 +32,9 @@ namespace Web_practice.Models.DB
 
 		[Required]
 		public bool Iscalculating { get; set; }
+
+		[MaxLength(255)]
+		[Required]
+		public string InterpolationString { get; set; }
 	}
 }

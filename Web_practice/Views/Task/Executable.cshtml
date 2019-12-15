@@ -1,0 +1,32 @@
+﻿@model Web_practice.Models.Pages.Task.ExecutableModel
+
+@{
+    ViewData["Title"] = "Executable";
+}
+
+<h1>Executable</h1>
+
+
+<div class="row">
+	<div class="col-md-4">
+		<form asp-action="Executable" method="post">
+			<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+			<div class="form-group">
+				<input type="submit" value="стартуем" class="btn btn-primary" />
+			</div>
+		</form>
+	</div>
+	<div class="col-md-4">
+		<form asp-action="Statistics" method="get">
+			<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+			<div class="form-group">
+				<input type="submit" value="результаты" class="btn btn-primary" />
+			</div>
+		</form>
+	</div>
+</div>
+
+<div>
+    @Html.ActionLink("Edit", "Edit", new { /* id = Model.PrimaryKey */ }) |
+    <a asp-action="Index">Back to List</a>
+</div>

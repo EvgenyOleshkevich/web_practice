@@ -2,18 +2,22 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Web_practice.Models.Pages.Account;
-using Web_practice.Models.Pages;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Web_practice.Models.DB;
 using Microsoft.AspNetCore.Authorization;
-using System.IO;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+
+using Web_practice.Models.DB;
+using Web_practice.Utilities;
+using Web_practice.Models.Pages.Account;
+using Web_practice.Models.Pages;
+using System.IO;
 
 namespace Web_practice.Controllers
 {
@@ -24,8 +28,10 @@ namespace Web_practice.Controllers
 		private readonly IHostingEnvironment appEnvironment;
 
 		public AccountController(DataContext _dataContext,
+			IDataProtectionProvider provider,
 			IHostingEnvironment _appEnvironment)
 		{
+			ProtectData.GetInstance().Initialize(provider);
 			dataContext = _dataContext;
 			appEnvironment = _appEnvironment;
 		}
@@ -75,6 +81,7 @@ namespace Web_practice.Controllers
 					{
 						dataContext.Users.Add(user);
 						dataContext.SaveChanges();
+						
 					}
 					catch (Exception ex)
 					{
@@ -82,7 +89,9 @@ namespace Web_practice.Controllers
 					}
 
 					var userId = dataContext.Users.FirstOrDefault(i => i.Login == user.Login).Id;
+					string nameDirectory = $"{userId}";
 
+					Directory.CreateDirectory($"./wwwroot/data/{nameDirectory}");
 					await Authorize(userId.ToString()); // авторизация
 
 					return RedirectToAction("Profile", "Account");

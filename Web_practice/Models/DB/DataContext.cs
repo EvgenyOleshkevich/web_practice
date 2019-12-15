@@ -10,14 +10,12 @@ namespace Web_practice.Models.DB
 	{
 		public DbSet<UserData> Users { get; set; }
 
-
 		public DbSet<TaskData> Tasks { get; set; }
-
-		public DbSet<ExecutableData> Exes { get; set; }
-
 		public DbSet<TestData> Tests { get; set; }
 
 		public DbSet<TaskAccessData> TaskAccesses { get; set; }
+
+		public DbSet<ExecutableData> Exeсutables { get; set; }
 
 		public DbSet<StatisticData> Statistics { get; set; }
 

@@ -41,8 +41,8 @@
 			{
 				<div class="box">
 					<div class="inner">
-						<form asp-controller="Task" asp-action="Task" method="post">
-							<button type="submit" class="button fit" name="IdEncode" value="@Web_practice.Utilities.ProtectData.GetInstance().Encode(task.Id)">@task.Title</button>
+						<form asp-controller="Task" asp-action="Task" method="get">
+							<button type="submit" class="button fit" name="taskIdEncode" value="@Web_practice.Utilities.ProtectData.GetInstance().Encode(task.Id)">@task.Title</button>
 						</form>
 					</div>
 				</div>

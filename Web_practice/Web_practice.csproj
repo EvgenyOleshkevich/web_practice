@@ -4,6 +4,21 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Migrations\20191215135457_m2.cs" />
+    <Compile Remove="Migrations\20191215135457_m2.Designer.cs" />
+    <Compile Remove="Migrations\20191215135624_m2.cs" />
+    <Compile Remove="Migrations\20191215135624_m2.Designer.cs" />
+    <Compile Remove="Migrations\20191215140655_m1.cs" />
+    <Compile Remove="Migrations\20191215140655_m1.Designer.cs" />
+    <Compile Remove="Migrations\20191215141149_m1.cs" />
+    <Compile Remove="Migrations\20191215141149_m1.Designer.cs" />
+    <Compile Remove="Migrations\20191215141831_m1.cs" />
+    <Compile Remove="Migrations\20191215141831_m1.Designer.cs" />
+    <Compile Remove="Migrations\20191215142141_m2.cs" />
+    <Compile Remove="Migrations\20191215142141_m2.Designer.cs" />
+  </ItemGroup>
+
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.7" />
