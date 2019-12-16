@@ -1,0 +1,45 @@
+﻿@model Web_practice.Models.Pages.Task.AccessChangeModel
+
+@{
+    ViewData["Title"] = "AccessChange";
+}
+
+<h1>AccessChange</h1>
+
+<div class="limiter">
+	<div class="container-login100">
+		<div class="wrap-login100">
+			<form class="login100-form p-l-55 p-r-55 p-t-178 validate-form" asp-antiforgery="true" asp-action="AccessChange" asp-controller="Task" method="post">
+				<div class="text-danger">@ViewBag.Error</div>
+				<ul class="text-danger">
+					@foreach (var error in Model.Errors)
+					{
+						<li>@error</li>
+					}
+				</ul>
+				<div asp-validation-summary="ModelOnly" />
+
+				<div class="form-group">
+					<label class="field-labels" asp-for="Level">уровень доступа:</label>
+					<input type="number" asp-for="Level" />
+					<span asp-validation-for="Level" class="text-danger" />
+				</div>
+
+				<div class="container-login100-form-btn">
+					<button class="login100-form-btn" type="submit" name="accessIdEncode" value="@Model.AccessIdEncode">
+						подтвердить
+					</button>
+				</div>
+
+			</form>
+		</div>
+	</div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

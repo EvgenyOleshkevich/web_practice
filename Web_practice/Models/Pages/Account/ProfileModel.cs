@@ -11,6 +11,12 @@ namespace Web_practice.Models.Pages.Account
 	{
 		public UserData User { get; set; }
 
-		public List<TaskData> Tasks { get; set; }
+
+		public class TaskUser
+		{
+			public TaskData Task { get; set; }
+			public string User { get; set; }
+		}
+		public List<TaskUser> Tasks { get; set; }
 	}
 }

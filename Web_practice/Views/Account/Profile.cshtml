@@ -39,10 +39,12 @@
 		<div class="thumbnails">
 			@foreach (var task in Model.Tasks)
 			{
+				<h3></h3>
+				<hr />
 				<div class="box">
 					<div class="inner">
-						<form asp-controller="Task" asp-action="Task" method="get">
-							<button type="submit" class="button fit" name="taskIdEncode" value="@Web_practice.Utilities.ProtectData.GetInstance().Encode(task.Id)">@task.Title</button>
+						<form asp-controller="Task" asp-action="OpenTask" method="get">
+							<button type="submit" class="button fit" name="taskIdEncode" value="@Web_practice.Utilities.ProtectData.GetInstance().Encode(task.Task.Id)">@task.User::@task.Task.Title</button>
 						</form>
 					</div>
 				</div>

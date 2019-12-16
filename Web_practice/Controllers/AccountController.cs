@@ -26,6 +26,7 @@ namespace Web_practice.Controllers
 		private readonly DataContext dataContext;
 		[Obsolete]
 		private readonly IHostingEnvironment appEnvironment;
+		private readonly MyEnvironment environment;
 
 		public AccountController(DataContext _dataContext,
 			IDataProtectionProvider provider,
@@ -34,6 +35,7 @@ namespace Web_practice.Controllers
 			ProtectData.GetInstance().Initialize(provider);
 			dataContext = _dataContext;
 			appEnvironment = _appEnvironment;
+			environment = new MyEnvironment(dataContext, appEnvironment);
 		}
 
 
@@ -101,6 +103,7 @@ namespace Web_practice.Controllers
 		}
 
 
+
 		[HttpPost]
 		[ValidateAntiForgeryToken]
 		public async Task<IActionResult> Authorization(IndexModel model)
@@ -125,7 +128,7 @@ namespace Web_practice.Controllers
 		{
 			var claims = new List<Claim>
 				{
-					new Claim(ClaimsIdentity.DefaultNameClaimType, DB_id)
+					new Claim(ClaimsIdentity.DefaultNameClaimType, DB_id),
 				};
 
 			ClaimsIdentity id = new ClaimsIdentity(
@@ -155,12 +158,27 @@ namespace Web_practice.Controllers
 			try
 			{
 				var userId = Int32.Parse(HttpContext.User.Identity.Name);
+				//var q = HttpContext.User.Claims.Last().Value;
 				var user = dataContext.Users.Single(i => i.Id == userId);
-				return View(new ProfileModel()
-				{
-					User = user,
-					Tasks = dataContext.Tasks.Where(i => i.User_id == userId).ToList()
-				});
+				var model = new ProfileModel() { User = user };
+
+				var tasks = (from access in dataContext.TaskAccesses.Where(i => i.User_id == userId)
+							   join task in dataContext.Tasks on access.Task_id equals task.Id
+							   select new ProfileModel.TaskUser
+							   {
+								   User = dataContext.Users.FirstOrDefault(i => i.Id == task.User_id).Login,
+								   Task = task
+							   }).ToList();
+
+				model.Tasks = (from task in dataContext.Tasks.Where(i => i.User_id == userId)
+
+							   select new ProfileModel.TaskUser
+							   {
+								   User = user.Login,
+								   Task = task
+							   }).ToList();
+				model.Tasks.AddRange(tasks);
+				return View(model);
 			}
 			catch (Exception ex)
 			{
@@ -236,7 +254,8 @@ namespace Web_practice.Controllers
 
 			var userId = Int32.Parse(HttpContext.User.Identity.Name);
 			var user = dataContext.Users.Single(i => i.Id == userId);
-			dataContext.Users.Remove(user);
+			environment.DeleteUser(user);
+			//dataContext.Users.Remove(user);
 			dataContext.SaveChanges();
 			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 

@@ -10,12 +10,6 @@ namespace Web_practice.Models.Pages.Task
 {
 	public class AdditionTestModel
 	{
-		public AdditionTestModel(string taskIdEncod)
-		{
-			Errors = new List<string>();
-			TaskIdEncod = taskIdEncod;
-		}
-
 		public AdditionTestModel()
 		{
 			Errors = new List<string>();
@@ -31,7 +25,5 @@ namespace Web_practice.Models.Pages.Task
 		public IFormFile Reference_path { get; set; }
 
 		public List<string> Errors { get; set; }
-
-		public string TaskIdEncod { get; set; }
 	}
 }

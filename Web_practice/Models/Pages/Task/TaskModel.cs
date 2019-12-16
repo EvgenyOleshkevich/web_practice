@@ -10,8 +10,15 @@ namespace Web_practice.Models.Pages.Task
 	{
 		public TaskData Task { get; set; }
 
-		public List<ExecutableData> Exes { get; set; }
+		public class Execute
+		{
+			public ExecutableData Exe { get; set; }
+			public string User { get; set; }
+		}
+		public List<Execute> Exes { get; set; }
 
 		public List<TestData> Tests { get; set; }
+
+		public int AccessLevel { get; set; }
 	}
 }

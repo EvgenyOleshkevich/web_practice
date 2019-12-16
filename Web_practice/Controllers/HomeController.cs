@@ -23,6 +23,15 @@ namespace Web_practice.Controllers
 			return View();
 		}
 
+		public IActionResult Home()
+		{
+			if (HttpContext.User.Identity.IsAuthenticated)
+			{
+				return Redirect("~/Account/Profile");
+			}
+			return Redirect("~/Home/Index");
+		}
+
 		public IActionResult Privacy()
 		{
 			return View();

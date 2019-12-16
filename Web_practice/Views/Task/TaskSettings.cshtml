@@ -1,0 +1,49 @@
+﻿@model Web_practice.Models.Pages.Task.TaskSettingsModel
+
+@{
+    ViewData["Title"] = "TaskSettings";
+}
+
+<h1>TaskSettings</h1>
+<div class="row">
+	<div class="col-md-4">
+		<form asp-action="AdditionAccess" method="get">
+			<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+			<div class="form-group">
+				<input type="submit" value="добавить подписчика" class="btn btn-primary" />
+			</div>
+		</form>
+	</div>
+</div>
+
+
+<h4>подписчики</h4>
+<div id="followers">
+	<div class="inner">
+		<!-- Boxes -->
+		<div class="thumbnails">
+			@foreach (var follower in Model.Followers)
+			{
+				<div class="box">
+					<div class="inner">
+						<h3>@follower.User</h3>
+						<form asp-controller="Task" asp-action="AccessChange" method="get">
+							<button type="submit" class="button fit" name="accessIdEncode" value="@Web_practice.Utilities.ProtectData.GetInstance().Encode(follower.Access.Id)">изменить</button>
+						</form>
+						<form asp-controller="Task" asp-action="AccessDelete" method="post">
+							<button type="submit" class="button fit" name="accessIdEncode" value="@Web_practice.Utilities.ProtectData.GetInstance().Encode(follower.Access.Id)">удалить</button>
+						</form>
+					</div>
+				</div>
+			}
+		</div>
+	</div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
