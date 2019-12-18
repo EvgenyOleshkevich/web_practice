@@ -108,7 +108,6 @@ namespace Web_practice.Controllers
 		[ValidateAntiForgeryToken]
 		public async Task<IActionResult> Authorization(IndexModel model)
 		{
-
 			if (ModelState.IsValid)
 			{
 				var user = dataContext.Users.FirstOrDefault(i => i.Login == model.Login && i.Password == model.Password);
@@ -254,7 +253,7 @@ namespace Web_practice.Controllers
 
 			var userId = Int32.Parse(HttpContext.User.Identity.Name);
 			var user = dataContext.Users.Single(i => i.Id == userId);
-			environment.DeleteUser(user);
+			environment.Delete(user);
 			//dataContext.Users.Remove(user);
 			dataContext.SaveChanges();
 			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

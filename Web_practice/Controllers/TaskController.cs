@@ -38,16 +38,7 @@ namespace Web_practice.Controllers
 			environment = new MyEnvironment(dataContext, appEnvironment);
 		}
 
-		private async void CreateFileCode_onServer(IFormFile Code, string pathCode)
-		{
 
-			// сохраняем файл в папку data/ в каталоге wwwroot
-			using (var fileStream = new FileStream(appEnvironment.WebRootPath + pathCode, FileMode.Create))
-			{
-				await Code.CopyToAsync(fileStream);
-			}
-
-		}
 		private int GetUserId()
 		{
 			return Int32.Parse(HttpContext.User.Identity.Name);
@@ -73,7 +64,7 @@ namespace Web_practice.Controllers
 		}
 
 		[HttpPost]
-		public async Task<IActionResult> AdditionTask(AdditionTaskModel model)
+		public IActionResult AdditionTask(AdditionTaskModel model)
 		{
 			int user_id = GetUserId();
 
@@ -88,6 +79,7 @@ namespace Web_practice.Controllers
 
 			Directory.CreateDirectory($"./wwwroot/data/{nameDirectory}");
 			Directory.CreateDirectory($"./wwwroot/data/{nameDirectory}/tests");
+			Directory.CreateDirectory($"./wwwroot/data/{nameDirectory}/tests_ref");
 			Directory.CreateDirectory($"./wwwroot/data/{nameDirectory}/references");
 			Directory.CreateDirectory($"./wwwroot/data/{nameDirectory}/executables");
 			string pathCode;
@@ -96,7 +88,7 @@ namespace Web_practice.Controllers
 				string nameFileCode = model.Comparator.FileName.Split("\\").Last(); //В IE имя это путь
 																					// путь к папке /files/gameCode/{nameDirectory}/{nameFileCode}
 				pathCode = $"/data/{nameDirectory}/{nameFileCode}"; //нужны 2 точки
-				CreateFileCode_onServer(model.Comparator, pathCode);
+				environment.CreateFileCode_onServer(model.Comparator, pathCode);
 			}
 			else
 				pathCode = "";
@@ -131,10 +123,10 @@ namespace Web_practice.Controllers
 				taskId = Int32.Parse(taskId_str);
 				userId_str = HttpContext.User.Identity.Name;
 				userId = Int32.Parse(userId_str);
-				task = dataContext.Tasks.FirstOrDefault(i => i.Id == taskId);
+				task = dataContext.Tasks.Single(i => i.Id == taskId);
 				if (task.User_id != userId)
 				{
-					access = dataContext.TaskAccesses.FirstOrDefault(i => i.Task_id == taskId && i.User_id == userId).Level;
+					access = dataContext.TaskAccesses.Single(i => i.Task_id == taskId && i.User_id == userId).Level;
 				}
 			}
 			catch (Exception ex)
@@ -169,7 +161,7 @@ namespace Web_practice.Controllers
 			var taskId = GetTaskId();
 			var userId = GetUserId();
 			var accessLevel = GetAccessLevel();
-			var task = dataContext.Tasks.FirstOrDefault(i => i.Id == taskId);
+			var task = dataContext.Tasks.Single(i => i.Id == taskId);
 			var model = new TaskModel()
 			{
 				Task = task,
@@ -179,7 +171,7 @@ namespace Web_practice.Controllers
 
 			if (accessLevel % 10 == 1)
 			{
-				var user = dataContext.Users.FirstOrDefault(i => i.Id == userId).Login;
+				var user = dataContext.Users.Single(i => i.Id == userId).Login;
 				//model.Exes = dataContext.Exeсutables.Where(i => i.Task_id == task.Id && i.User_id == userId).ToList();
 				model.Exes = dataContext.Exeсutables.
 							  Where(i => i.Task_id == taskId && i.User_id == userId).Select(
@@ -207,11 +199,11 @@ namespace Web_practice.Controllers
 
 
 		[HttpPost]
-		public async Task<IActionResult> TaskDelete()
+		public IActionResult TaskDelete()
 		{
 			var taskId = GetTaskId();
-			var task = dataContext.Tasks.FirstOrDefault(i => i.Id == taskId);
-			environment.DeleteTask(task);
+			var task = dataContext.Tasks.Single(i => i.Id == taskId);
+			environment.Delete(task);
 			dataContext.SaveChanges();
 			return Redirect("~/Account/Profile");
 		}
@@ -245,7 +237,7 @@ namespace Web_practice.Controllers
 		}
 
 		[HttpPost]
-		public async Task<IActionResult> AdditionAccess(AdditionAccessModel model)
+		public IActionResult AdditionAccess(AdditionAccessModel model)
 		{
 
 			if (ModelState.IsValid)
@@ -258,7 +250,7 @@ namespace Web_practice.Controllers
 					ModelState.AddModelError("", "Пользователь с таким логином не существует");
 				}
 
-				if (dataContext.Users.FirstOrDefault(i => i.Id == ownUserId).Login == model.Login)
+				if (dataContext.Users.Single(i => i.Id == ownUserId).Login == model.Login)
 				{
 					model.Errors.Add("Нельзя менять свой уровень доступа");
 					ModelState.AddModelError("", "Нельзя менять свой уровень доступа");
@@ -301,7 +293,7 @@ namespace Web_practice.Controllers
 		}
 
 		[HttpPost]
-		public async Task<IActionResult> AccessChange(AccessChangeModel model, string accessIdEncode)
+		public IActionResult AccessChange(AccessChangeModel model, string accessIdEncode)
 		{
 			
 			if (ModelState.IsValid)
@@ -335,18 +327,13 @@ namespace Web_practice.Controllers
 
 
 		[HttpPost]
-		public async Task<IActionResult> AccessDelete(string accessIdEncode)
+		public IActionResult AccessDelete(string accessIdEncode)
 		{
 			var accessIdDecoded = ProtectData.GetInstance().DecodeToString(accessIdEncode);
 			var accessId = Int32.Parse(accessIdDecoded);
-			var access = dataContext.TaskAccesses.FirstOrDefault(i => i.Id == accessId);
-			var executables = dataContext.Exeсutables.Where(i => i.Task_id == access.Task_id
-			&& i.User_id == access.User_id);
+			var access = dataContext.TaskAccesses.Single(i => i.Id == accessId);
 
-			foreach (var exe in executables)
-				environment.DeleteExecutable(exe);
-			dataContext.Exeсutables.RemoveRange(executables);
-			dataContext.TaskAccesses.Remove(access);
+			environment.Delete(access);
 			dataContext.SaveChanges();
 
 			return Redirect("Task");
@@ -367,31 +354,38 @@ namespace Web_practice.Controllers
 		{
 			int user_id = GetUserId();
 			var taskId = GetTaskId();
-			var task = dataContext.Tasks.FirstOrDefault(i => i.Id == taskId);
+			var task = dataContext.Tasks.Single(i => i.Id == taskId);
 
-			if (dataContext.Tests.FirstOrDefault(i => i.Title == model.Title) != null)
+			if (dataContext.Tests.FirstOrDefault(i => i.Title == model.Title && i.Task_id == taskId) != null)
 			{
 				model.Errors.Add("тест с таким названием уже существует");
 				ModelState.AddModelError("", "тест с таким названием уже существует");
 				return View(model);
 			}
 
-			string nameDirectoryTest = $"/data/{task.User_id}/{task.Title}/tests";
-			string nameDirectoryRef = $"/data/{task.User_id}/{task.Title}/references";
-
-			if (!Directory.Exists($"./wwwroot{nameDirectoryTest}"))
-				Directory.CreateDirectory($"./wwwroot{nameDirectoryTest}");
-			string nameFileTest = model.Test_path.FileName.Split("\\").Last();
-			string pathTest = nameDirectoryTest + $"/{model.Title}_{nameFileTest}";
-			CreateFileCode_onServer(model.Test_path, pathTest);
-
+			string pathTest;
 			string pathRef = null;
+
 			if (model.Reference_path != null)
 			{
-				if (!Directory.Exists($"./wwwroot{nameDirectoryTest}"))
-					Directory.CreateDirectory($"./wwwroot{nameDirectoryTest}");
-				pathRef = nameDirectoryRef + $"/{model.Title}_{model.Reference_path.FileName.Split("\\").Last()}";
-				CreateFileCode_onServer(model.Reference_path, pathRef);
+				string nameDirectoryTest = $"/data/{task.User_id}/{task.Title}/tests_ref";
+				string nameFileTest = model.Test_path.FileName.Split("\\").Last();
+				pathTest = nameDirectoryTest + $"/{model.Title}_{nameFileTest}";
+
+				string nameDirectoryRef = $"/data/{task.User_id}/{task.Title}/references";
+				string nameFileRef = model.Reference_path.FileName.Split("\\").Last();
+				pathRef = nameDirectoryRef + $"/{model.Title}_{nameFileRef}";
+
+				environment.CreateFileCode_onServer(model.Test_path, pathTest);
+				environment.CreateFileCode_onServer(model.Reference_path, pathRef);
+			}
+			else
+			{
+				string nameDirectoryTest = $"/data/{task.User_id}/{task.Title}/tests";
+				string nameFileTest = model.Test_path.FileName.Split("\\").Last();
+				pathTest = nameDirectoryTest + $"/{model.Title}_{nameFileTest}";
+
+				environment.CreateFileCode_onServer(model.Test_path, pathTest);
 			}
 
 			var test = new TestData
@@ -411,18 +405,12 @@ namespace Web_practice.Controllers
 		{
 			var testIdDecoded = ProtectData.GetInstance().DecodeToString(testIdEncode);
 			var testId = Int32.Parse(testIdDecoded);
-			var test = dataContext.Tests.FirstOrDefault(i => i.Id == testId);
-			var task = dataContext.Tasks.FirstOrDefault(i => i.Id == test.Task_id);
-			//string testFile = $"\\data\\{task.User_id}\\{task.Title}\\tests\\{test.Title}";
-
+			var test = dataContext.Tests.Single(i => i.Id == testId);
 
 			environment.DeleteFile(test.Path_test);
 			if (test.Path_reference != null)
-			{
-				string refFile = $"\\data\\{task.User_id}\\{task.Title}\\references\\{test.Title}";
-
 				environment.DeleteFile(test.Path_reference);
-			}
+
 			dataContext.Tests.Remove(test);
 			dataContext.SaveChanges();
 
@@ -445,7 +433,7 @@ namespace Web_practice.Controllers
 			int user_id = GetUserId();
 			//var taskIdDecoded = ProtectData.GetInstance().DecodeToString(taskIdEncode);
 			var taskId = GetTaskId();
-			var task = dataContext.Tasks.FirstOrDefault(i => i.Id == taskId);
+			var task = dataContext.Tasks.Single(i => i.Id == taskId);
 
 			if (dataContext.Exeсutables.FirstOrDefault(i => (i.User_id == user_id)
 			&& (i.Title == model.Title) && (i.Task_id == taskId)) != null)
@@ -455,13 +443,13 @@ namespace Web_practice.Controllers
 				return View(model);
 			}
 
-			string nameDirectory = $"/data/{task.User_id}/{task.Title}/executables/{user_id}/{model.Title}";
+			string nameDirectory = $"/{task.User_id}/{task.Title}/executables/{user_id}/{model.Title}";
 
-			Directory.CreateDirectory($"./wwwroot{nameDirectory}");
+			Directory.CreateDirectory($"./wwwroot/data{nameDirectory}");
 			string nameFileCode = model.Executable.FileName.Split("\\").Last(); //В IE имя это путь
 
 			string pathCode = nameDirectory + $"/{nameFileCode}"; //нужны 2 точки
-			CreateFileCode_onServer(model.Executable, pathCode);
+			environment.CreateFileCode_onServer(model.Executable, pathCode);
 
 			var exe = new ExecutableData
 			{
@@ -475,6 +463,8 @@ namespace Web_practice.Controllers
 			};
 			dataContext.Exeсutables.Add(exe);
 			dataContext.SaveChanges();
+			var executor = new Executor(task, exe, nameDirectory, dataContext, appEnvironment);
+			executor.StartTests();
 			return Redirect("Task");
 		}
 
@@ -483,10 +473,9 @@ namespace Web_practice.Controllers
 		{
 			var exeIdDecoded = ProtectData.GetInstance().DecodeToString(exeIdEncode);
 			var exeId = Int32.Parse(exeIdDecoded);
-			var exe = dataContext.Exeсutables.FirstOrDefault(i => i.Id == exeId);
+			var exe = dataContext.Exeсutables.Single(i => i.Id == exeId);
 			//string nameFile = $"\\data\\{task.User_id}\\{task.Title}\\executables\\{exe.User_id}\\{exe.Title}";
-			environment.DeleteExecutable(exe);
-			dataContext.Exeсutables.Remove(exe);
+			environment.Delete(exe);
 			dataContext.SaveChanges();
 
 			return Redirect("Task");
