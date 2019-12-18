@@ -15,12 +15,11 @@ namespace Web_practice.Models.DB
 		[ForeignKey("UserData")]
 		public int User_id { get; set; }
 
-		[MaxLength(100)]
+		[MaxLength(50)]
 		[Required]
 		public string Title { get; set; }
 
 		[MaxLength(255)]
-		[Required]
 		public string Path_cmp { get; set; }
 	}
 }

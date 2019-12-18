@@ -7,19 +7,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Web_practice.Models.DB
 {
-	public class StatisticData
+	public class QueueData
 	{
 		[Key]
 		public int Id { get; set; }
 
-		[ForeignKey("Executable")]
+		[ForeignKey("ExecutableData")]
 		public int Exe_id { get; set; }
-
-		[MaxLength(255)]
-		[Required]
-		public string Path_stat { get; set; }
-
-		public int Param_from { get; set; }
-		public int Param_to { get; set; }
 	}
 }

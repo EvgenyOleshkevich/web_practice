@@ -25,11 +25,11 @@ namespace Web_practice.Utilities
 			IHostingEnvironment appEnvironment)
 		{
 			dataContext = _dataContext;
-			env = appEnvironment.WebRootPath + "/data";
+			Env = appEnvironment.WebRootPath + "/data/";
 		}
 
 		private readonly DataContext dataContext;
-		private readonly string env;
+		public string Env { get; }
 
 		private class AccessDeleteData
 		{
@@ -37,29 +37,31 @@ namespace Web_practice.Utilities
 			public TaskData Task { get; set; }
 		}
 
-		public async void CreateFileCode_onServer(IFormFile Code, string pathCode)
+		public void CreateDirectory(string path)
 		{
+			Directory.CreateDirectory(Env + path);
+		}
 
-			// сохраняем файл в папку data/ в каталоге wwwroot
-			using (var fileStream = new FileStream(env + pathCode, FileMode.Create))
+		public async void CreateFileCode(IFormFile Code, string pathCode)
+		{
+			using (var fileStream = new FileStream(Env + pathCode, FileMode.Create))
 			{
 				await Code.CopyToAsync(fileStream);
 			}
 
 		}
 
-		public void DeleteDirictory(string path)
+		public void DeleteDirectory(string path)
 		{
-			//Path: /images/game/{nameDir}
-			DirectoryInfo dir = new DirectoryInfo(env + path);
+			DirectoryInfo dir = new DirectoryInfo(Env + path);
 			if (dir.Exists)
-				DeleteDirictory(dir);
+				DeleteDirectory(dir);
 		}
 
-		public void DeleteDirictory(DirectoryInfo dirInfo)
+		public void DeleteDirectory(DirectoryInfo dirInfo)
 		{
 			foreach (var dir in dirInfo.GetDirectories())
-				DeleteDirictory(dir);
+				DeleteDirectory(dir);
 			foreach (var file in dirInfo.GetFiles())
 				file.Delete();
 			dirInfo.Delete();
@@ -67,37 +69,29 @@ namespace Web_practice.Utilities
 
 		public void DeleteFile(string path)
 		{
-			//Path: /images/game/{nameDir}/{nameFile}
-			var file = new FileInfo(env + path);
+			var file = new FileInfo(Env + path);
 			if (file != null)
-			{
 				file.Delete();
-			}
-		}
-
-		private void DeleteStatistics(IEnumerable<StatisticData> statistics)
-		{
-			var results = (from stat in statistics
-						   join res in dataContext.Results on stat.Id equals res.Stat_id
-						   select res);
-			dataContext.Results.RemoveRange(results);
-			dataContext.Statistics.RemoveRange(statistics);
 		}
 
 		private void RemoveExecutables(IEnumerable<ExecutableData> executables) // from db
 		{
-			var statistics = (from exe in executables
-							  join stat in dataContext.Statistics on exe.Id equals stat.Exe_id
-							  select stat);
-			DeleteStatistics(statistics);
+			var results = (from exe in executables
+							  join res in dataContext.Results on exe.Id equals res.Exe_id
+							  select res);
+			dataContext.Results.RemoveRange(results);
 			dataContext.Exeсutables.RemoveRange(executables);
 		}
 
 		public void Delete(ExecutableData executable)
 		{
-			var file = new FileInfo(env + executable.Path_exe);
-			DeleteDirictory(file.Directory);
-			DeleteStatistics(dataContext.Statistics.Where(i => i.Exe_id == executable.Id));
+			FileInfo file;
+			if (executable.Path_exe != null)
+				file = new FileInfo(Env + executable.Path_exe);
+			else
+				file = new FileInfo(Env + executable.Path_stat);
+			DeleteDirectory(file.Directory);
+			dataContext.Results.RemoveRange(dataContext.Results.Where(i => i.Exe_id == executable.Id));
 			dataContext.Exeсutables.Remove(executable);
 		}
 
@@ -106,8 +100,8 @@ namespace Web_practice.Utilities
 			var executables = _executables.ToList();
 			foreach (var exe in executables)
 			{
-				var file = new FileInfo(env + exe.Path_exe);
-				DeleteDirictory(file.Directory);
+				var file = new FileInfo(Env + exe.Path_exe);
+				DeleteDirectory(file.Directory);
 			}
 			RemoveExecutables(_executables);
 		}
@@ -118,8 +112,8 @@ namespace Web_practice.Utilities
 			&& i.User_id == access.User_id);
 			var task = dataContext.Tasks.Single(i => i.Id == access.Task_id);
 			RemoveExecutables(executables);
-			string nameDirectory = $"\\data\\{task.User_id}\\{task.Title}\\executables\\{access.User_id}";
-			DeleteDirictory(nameDirectory);
+			string nameDirectory = $"{task.User_id}\\{task.Title}\\executables\\{access.User_id}";
+			DeleteDirectory(nameDirectory);
 			dataContext.TaskAccesses.Remove(access);
 		}
 
@@ -128,7 +122,7 @@ namespace Web_practice.Utilities
 			foreach (var access in accesses)
 			{
 				string nameDirectory = $"\\data\\{access.Task.User_id}\\{access.Task.Title}\\executables\\{access.Access.User_id}";
-				DeleteDirictory(nameDirectory);
+				DeleteDirectory(nameDirectory);
 			}
 			dataContext.TaskAccesses.RemoveRange(accesses.Select(i => i.Access));
 		}
@@ -139,8 +133,7 @@ namespace Web_practice.Utilities
 			var accesses = dataContext.TaskAccesses.Where(i => i.Task_id == task.Id);
 			var tests = dataContext.Tests.Where(i => i.Task_id == task.Id);
 
-			string nameDirectory = $"\\data\\{task.User_id}\\{task.Title}";
-			DeleteDirictory(nameDirectory);
+			DeleteDirectory($"{task.User_id}\\{task.Title}");
 			RemoveExecutables(executables);
 			dataContext.TaskAccesses.RemoveRange(accesses);
 			dataContext.Tests.RemoveRange(tests);
@@ -185,8 +178,7 @@ namespace Web_practice.Utilities
 			Delete(accessesDelete);
 			Delete(tasks);
 			dataContext.Users.Remove(user);
-			string nameDirectory = $"\\data\\{user.Id}";
-			DeleteDirictory(nameDirectory);
+			DeleteDirectory(user.Id.ToString());
 		}
 	}
 }

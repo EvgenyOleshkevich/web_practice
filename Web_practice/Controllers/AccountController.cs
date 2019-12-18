@@ -24,17 +24,14 @@ namespace Web_practice.Controllers
 	public class AccountController : Controller
 	{
 		private readonly DataContext dataContext;
-		[Obsolete]
-		private readonly IHostingEnvironment appEnvironment;
 		private readonly MyEnvironment environment;
 
 		public AccountController(DataContext _dataContext,
 			IDataProtectionProvider provider,
-			IHostingEnvironment _appEnvironment)
+			IHostingEnvironment appEnvironment)
 		{
 			ProtectData.GetInstance().Initialize(provider);
 			dataContext = _dataContext;
-			appEnvironment = _appEnvironment;
 			environment = new MyEnvironment(dataContext, appEnvironment);
 		}
 
@@ -90,11 +87,11 @@ namespace Web_practice.Controllers
 						throw ex;
 					}
 
-					var userId = dataContext.Users.FirstOrDefault(i => i.Login == user.Login).Id;
-					string nameDirectory = $"{userId}";
+					var userId = dataContext.Users.FirstOrDefault(i => i.Login == user.Login).Id.ToString();
 
-					Directory.CreateDirectory($"./wwwroot/data/{nameDirectory}");
-					await Authorize(userId.ToString()); // авторизация
+					//Directory.CreateDirectory($"./wwwroot/data/{userId}");
+					environment.CreateDirectory(userId);
+					await Authorize(userId); // авторизация
 
 					return RedirectToAction("Profile", "Account");
 				}
@@ -254,7 +251,6 @@ namespace Web_practice.Controllers
 			var userId = Int32.Parse(HttpContext.User.Identity.Name);
 			var user = dataContext.Users.Single(i => i.Id == userId);
 			environment.Delete(user);
-			//dataContext.Users.Remove(user);
 			dataContext.SaveChanges();
 			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 

@@ -25,7 +25,6 @@ namespace Web_practice.Controllers
 	{
 		private readonly DataContext dataContext;
 		[Obsolete]
-		private readonly IHostingEnvironment appEnvironment;
 		private readonly MyEnvironment environment;
 
 		public TaskController(DataContext _dataContext,
@@ -34,11 +33,8 @@ namespace Web_practice.Controllers
 		{
 			ProtectData.GetInstance().Initialize(provider);
 			dataContext = _dataContext;
-			appEnvironment = _appEnvironment;
-			environment = new MyEnvironment(dataContext, appEnvironment);
+			environment = new MyEnvironment(dataContext, _appEnvironment);
 		}
-
-
 		private int GetUserId()
 		{
 			return Int32.Parse(HttpContext.User.Identity.Name);
@@ -77,21 +73,24 @@ namespace Web_practice.Controllers
 
 			string nameDirectory = $"{user_id}/{model.Title}";
 
-			Directory.CreateDirectory($"./wwwroot/data/{nameDirectory}");
-			Directory.CreateDirectory($"./wwwroot/data/{nameDirectory}/tests");
-			Directory.CreateDirectory($"./wwwroot/data/{nameDirectory}/tests_ref");
-			Directory.CreateDirectory($"./wwwroot/data/{nameDirectory}/references");
-			Directory.CreateDirectory($"./wwwroot/data/{nameDirectory}/executables");
-			string pathCode;
+			//Directory.CreateDirectory($"./wwwroot/data/{nameDirectory}");
+			//Directory.CreateDirectory($"./wwwroot/data/{nameDirectory}/tests");
+			//Directory.CreateDirectory($"./wwwroot/data/{nameDirectory}/tests_ref");
+			//Directory.CreateDirectory($"./wwwroot/data/{nameDirectory}/references");
+			//Directory.CreateDirectory($"./wwwroot/data/{nameDirectory}/executables");
+
+			environment.CreateDirectory(nameDirectory);
+			environment.CreateDirectory(nameDirectory + "/tests");
+			environment.CreateDirectory(nameDirectory + "/tests_ref");
+			environment.CreateDirectory(nameDirectory + "/references");
+			environment.CreateDirectory(nameDirectory + "/executables");
+			string pathCode = null;
 			if (model.Comparator != null)
 			{
-				string nameFileCode = model.Comparator.FileName.Split("\\").Last(); //В IE имя это путь
-																					// путь к папке /files/gameCode/{nameDirectory}/{nameFileCode}
-				pathCode = $"/data/{nameDirectory}/{nameFileCode}"; //нужны 2 точки
-				environment.CreateFileCode_onServer(model.Comparator, pathCode);
+				string nameFileCode = model.Comparator.FileName.Split("\\").Last();
+				pathCode = $"{nameDirectory}/{nameFileCode}";
+				environment.CreateFileCode(model.Comparator, pathCode);
 			}
-			else
-				pathCode = "";
 
 			var task = new TaskData
 			{
@@ -273,7 +272,6 @@ namespace Web_practice.Controllers
 					{
 						dataContext.TaskAccesses.Add(access);
 						dataContext.SaveChanges();
-
 					}
 					catch (Exception ex)
 					{
@@ -368,24 +366,24 @@ namespace Web_practice.Controllers
 
 			if (model.Reference_path != null)
 			{
-				string nameDirectoryTest = $"/data/{task.User_id}/{task.Title}/tests_ref";
+				string nameDirectoryTest = $"{task.User_id}/{task.Title}/tests_ref/";
 				string nameFileTest = model.Test_path.FileName.Split("\\").Last();
-				pathTest = nameDirectoryTest + $"/{model.Title}_{nameFileTest}";
+				pathTest = nameDirectoryTest + $"{model.Title}_{nameFileTest}";
 
-				string nameDirectoryRef = $"/data/{task.User_id}/{task.Title}/references";
+				string nameDirectoryRef = $"{task.User_id}/{task.Title}/references/";
 				string nameFileRef = model.Reference_path.FileName.Split("\\").Last();
-				pathRef = nameDirectoryRef + $"/{model.Title}_{nameFileRef}";
+				pathRef = nameDirectoryRef + $"{model.Title}_{nameFileRef}";
 
-				environment.CreateFileCode_onServer(model.Test_path, pathTest);
-				environment.CreateFileCode_onServer(model.Reference_path, pathRef);
+				environment.CreateFileCode(model.Test_path, pathTest);
+				environment.CreateFileCode(model.Reference_path, pathRef);
 			}
 			else
 			{
-				string nameDirectoryTest = $"/data/{task.User_id}/{task.Title}/tests";
+				string nameDirectoryTest = $"{task.User_id}/{task.Title}/tests/";
 				string nameFileTest = model.Test_path.FileName.Split("\\").Last();
-				pathTest = nameDirectoryTest + $"/{model.Title}_{nameFileTest}";
+				pathTest = nameDirectoryTest + $"{model.Title}_{nameFileTest}";
 
-				environment.CreateFileCode_onServer(model.Test_path, pathTest);
+				environment.CreateFileCode(model.Test_path, pathTest);
 			}
 
 			var test = new TestData
@@ -443,28 +441,25 @@ namespace Web_practice.Controllers
 				return View(model);
 			}
 
-			string nameDirectory = $"/{task.User_id}/{task.Title}/executables/{user_id}/{model.Title}";
+			string nameDirectory = $"{task.User_id}/{task.Title}/executables/{user_id}/{model.Title}";
 
-			Directory.CreateDirectory($"./wwwroot/data{nameDirectory}");
+			environment.CreateDirectory(nameDirectory);
 			string nameFileCode = model.Executable.FileName.Split("\\").Last(); //В IE имя это путь
 
 			string pathCode = nameDirectory + $"/{nameFileCode}"; //нужны 2 точки
-			environment.CreateFileCode_onServer(model.Executable, pathCode);
+			environment.CreateFileCode(model.Executable, pathCode);
 
 			var exe = new ExecutableData
 			{
 				Title = model.Title,
 				User_id = user_id,
 				Path_exe = pathCode,
-				Path_cmp = "",
-				Task_id = taskId,
-				InterpolationString = "",
-				Iscalculating = false
+				Path_stat = null,
+				Task_id = taskId
 			};
 			dataContext.Exeсutables.Add(exe);
 			dataContext.SaveChanges();
-			var executor = new Executor(task, exe, nameDirectory, dataContext, appEnvironment);
-			executor.StartTests();
+			var executor = new Executor(task, exe, nameDirectory, dataContext, environment);
 			return Redirect("Task");
 		}
 
@@ -474,7 +469,6 @@ namespace Web_practice.Controllers
 			var exeIdDecoded = ProtectData.GetInstance().DecodeToString(exeIdEncode);
 			var exeId = Int32.Parse(exeIdDecoded);
 			var exe = dataContext.Exeсutables.Single(i => i.Id == exeId);
-			//string nameFile = $"\\data\\{task.User_id}\\{task.Title}\\executables\\{exe.User_id}\\{exe.Title}";
 			environment.Delete(exe);
 			dataContext.SaveChanges();
 

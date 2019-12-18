@@ -12,8 +12,8 @@ namespace Web_practice.Models.DB
 		[Key]
 		public int Id { get; set; }
 
-		[ForeignKey("StatisticData")]
-		public int Stat_id { get; set; }
+		[ForeignKey("ExecutableData")]
+		public int Exe_id { get; set; }
 
 
 		[ForeignKey("TestData")]

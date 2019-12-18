@@ -22,35 +22,38 @@ namespace Web_practice.Utilities
 {
 	public class Executor
 	{
-		public Executor(TaskData _task, ExecutableData _exe, string path_res,
+		public Executor(TaskData _task, ExecutableData _exe, string _path_res,
 			DataContext _dataContext,
-			IHostingEnvironment _appEnvironment)
+			MyEnvironment _environment)
 		{
 			dataContext = _dataContext;
-			appEnvironment = _appEnvironment;
 			exe = _exe;
-			path_out = appEnvironment.WebRootPath + path_res + "/";
-			stat = new StreamWriter(path_out + "statistic.csv");
+			path_res = _path_res + "/";
+			environment = _environment;
+			env = environment.Env;
+			exe.Path_stat = path_res + "statistic.csv";
+			stat = new StreamWriter(env + exe.Path_stat);
 			task = _task;
-			statistic = new StatisticData()
-			{
-				Exe_id = exe.Id,
-				Path_stat = path_out + "statistic.csv"
-			};
-			dataContext.Statistics.Add(statistic);
+			
+			StartTests_NoRef();
+			StartTests_Ref();
+			environment.DeleteFile(exe.Path_exe);
+			exe.Path_exe = null;
+			dataContext.Attach(exe).State = EntityState.Modified;
 			dataContext.SaveChanges();
-			statistic.Id = dataContext.Statistics.Single(i => i.Exe_id == exe.Id).Id;
+			stat.Close();
 		}
 
 
 		private readonly DataContext dataContext;
 		[Obsolete]
 		private readonly IHostingEnvironment appEnvironment;
-		private string path_out;
+		private string path_res;
+		private string env;
 		private StreamWriter stat;
 		private ExecutableData exe;
 		private TaskData task;
-		private StatisticData statistic;
+		private MyEnvironment environment;
 
 		private bool DefaultCMP(string path1, string path2)
 		{
@@ -61,6 +64,7 @@ namespace Web_practice.Utilities
 		{
 			if (task.Path_cmp == null)
 				return DefaultCMP(path1, path2);
+			return true;
 			var process = Process.Start(task.Path_cmp, $"{path1} {path2}");
 			process.WaitForExit();
 			return "1" == process.StandardOutput.ReadToEnd();
@@ -68,7 +72,6 @@ namespace Web_practice.Utilities
 
 		private void StartTests_Ref()
 		{
-			string env = appEnvironment.WebRootPath;
 			var tests = dataContext.Tests.Where(i =>
 			i.Task_id == task.Id && i.Path_reference != null).ToArray();
 			if (tests.Count() == 0)
@@ -82,14 +85,14 @@ namespace Web_practice.Utilities
 			{
 				var test = env + tests[i].Path_test;
 				var reference = env + tests[i].Path_reference;
-				var res = $"{path_out}{tests[i].Title}.txt";
+				var res = $"{path_res}{tests[i].Title}.txt";
 
-				var process = Process.Start(env + exe.Path_exe, $"4 {test} {res}");
+				var process = Process.Start(env + exe.Path_exe, $"4 {test} {env + res}");
 				process.WaitForExit();
 				times[i] = process.UserProcessorTime.Milliseconds;
 				results.Add(new ResultData()
 				{
-					Stat_id = statistic.Id,
+					Exe_id = exe.Id,
 					Test_id = tests[i].Id,
 					Path_res = res
 				});
@@ -101,7 +104,6 @@ namespace Web_practice.Utilities
 
 		private void StartTests_NoRef()
 		{
-			string env = appEnvironment.WebRootPath;
 			var tests = dataContext.Tests.Where(i =>
 			i.Task_id == task.Id && i.Path_reference == null).ToArray();
 			if (tests.Count() == 0)
@@ -113,27 +115,20 @@ namespace Web_practice.Utilities
 			for (int i = 0; i < tests.Count(); ++i)
 			{
 				var test = env + tests[i].Path_test;
-				var res = $"{path_out}{tests[i].Title}.txt";
+				var res = $"{path_res}{tests[i].Title}.txt";
 
-				var process = Process.Start(env + exe.Path_exe, $"4 {test} {res}");
+				var process = Process.Start(env + exe.Path_exe, $"4 {test} {env + res}");
 				process.WaitForExit();
 				times[i] = process.UserProcessorTime.Milliseconds;
 				results.Add(new ResultData()
 				{
-					Stat_id = statistic.Id,
+					Exe_id = exe.Id,
 					Test_id = tests[i].Id,
 					Path_res = res
 				});
 				stat.WriteLine($"{ tests[i].Title}; { times[i]};");
 			}
 			dataContext.Results.AddRange(results);
-		}
-
-		public void StartTests()
-		{
-			StartTests_NoRef();
-			dataContext.SaveChanges();
-			stat.Close();
 		}
 	}
 }

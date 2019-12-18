@@ -15,10 +15,8 @@ namespace Web_practice.Models.DB
 		[ForeignKey("TaskData")]
 		public int Task_id { get; set; }
 
-		//[ForeignKey("ExecutableData")]
-		//public int Exe_id { get; set; }
 
-		[MaxLength(100)]
+		[MaxLength(50)]
 		[Required]
 		public string Title { get; set; }
 

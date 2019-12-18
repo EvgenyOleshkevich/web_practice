@@ -18,23 +18,14 @@ namespace Web_practice.Models.DB
 		[ForeignKey("TaskData")]
 		public int Task_id { get; set; }
 
-		[MaxLength(100)]
+		[MaxLength(50)]
 		[Required]
 		public string Title { get; set; }
 
 		[MaxLength(255)]
-		[Required]
 		public string Path_exe { get; set; }
 
 		[MaxLength(255)]
-		[Required]
-		public string Path_cmp { get; set; }
-
-		[Required]
-		public bool Iscalculating { get; set; }
-
-		[MaxLength(255)]
-		[Required]
-		public string InterpolationString { get; set; }
+		public string Path_stat { get; set; }
 	}
 }

@@ -17,10 +17,7 @@ namespace Web_practice.Models.DB
 
 		public DbSet<ExecutableData> Exeсutables { get; set; }
 
-		public DbSet<StatisticData> Statistics { get; set; }
-
-		public DbSet<ResltByParamData> ResltsByParam { get; set; }
-
+		public DbSet<QueueData> Queue { get; set; }
 
 		public DbSet<ResultData> Results { get; set; }
 
