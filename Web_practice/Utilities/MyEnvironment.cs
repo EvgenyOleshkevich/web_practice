@@ -27,22 +27,18 @@ namespace Web_practice.Utilities
 			return instance;
 		}
 
-		public static void Init(DataContext dataContext, string env)
+		public static MyEnvironment GetInstance()
 		{
-			instance = new MyEnvironment(dataContext, env);
+			return instance;
 		}
 
-		private MyEnvironment(DataContext _dataContext,
-			IHostingEnvironment appEnvironment)
+		public static void Init(string env)
 		{
-			dataContext = _dataContext;
-			Env = appEnvironment.WebRootPath + "/data/";
+			instance = new MyEnvironment(env);
 		}
 
-		private MyEnvironment(DataContext _dataContext,
-			string env)
+		private MyEnvironment(string env)
 		{
-			dataContext = _dataContext;
 			Env = env;
 		}
 
@@ -83,19 +79,35 @@ namespace Web_practice.Utilities
 			foreach (var dir in dirInfo.GetDirectories())
 				DeleteDirectory(dir);
 			foreach (var file in dirInfo.GetFiles())
-				file.Delete();
+				try
+				{
+					file.Delete();
+				}
+				catch (UnauthorizedAccessException e)
+				{
+					file.Delete();
+				}
 			dirInfo.Delete();
 		}
 
-		public void DeleteFile(string path)
+		public bool DeleteFile(string path)
 		{
 			var file = new FileInfo(Env + path);
 			if (file != null)
-				file.Delete();
+				try
+				{
+					file.Delete();
+					return true;
+				}
+				catch (Exception e)
+				{
+				}
+			return true;
 		}
 
-		private void RemoveExecutables(IEnumerable<ExecutableData> executables) // from db
+		private async Task RemoveExecutables(IEnumerable<ExecutableData> executables) // from db
 		{
+			await Executor.GetInstance().Delete(executables);
 			var results = (from exe in executables
 							  join res in dataContext.Results on exe.Id equals res.Exe_id
 							  select res);
@@ -105,44 +117,32 @@ namespace Web_practice.Utilities
 
 		public async Task Delete(ExecutableData executable)
 		{
-			FileInfo file;
-
-			if (Executor.GetInstance(dataContext).Token != null)
-			{
-				Executor.GetInstance(dataContext).Token.Cancel();
-				await Executor.GetInstance(dataContext).Execution;
-				Executor.GetInstance(dataContext).Token.Dispose();
-				Executor.GetInstance(dataContext).Token = null;
-			}
-			if (executable.Path_exe != null)
-				file = new FileInfo(Env + executable.Path_exe);
-			else
-				file = new FileInfo(Env + executable.Path_stat);
-			DeleteDirectory(file.Directory);
+			await Executor.GetInstance().Delete(executable);
+			var file = new FileInfo(Env + executable.Path_stat);
 			dataContext.Results.RemoveRange(dataContext.Results.Where(i => i.Exe_id == executable.Id));
 			dataContext.Exeсutables.Remove(executable);
+			DeleteDirectory(file.Directory);
 		}
 
-		private void Delete(IEnumerable<ExecutableData> _executables)
+		private async Task Delete(IEnumerable<ExecutableData> executables)
 		{
-			var executables = _executables.ToList();
+			await RemoveExecutables(executables);
 			foreach (var exe in executables)
 			{
-				var file = new FileInfo(Env + exe.Path_exe);
+				var file = new FileInfo(Env + exe.Path_stat);
 				DeleteDirectory(file.Directory);
 			}
-			RemoveExecutables(_executables);
 		}
 
-		public void Delete(TaskAccessData access)
+		public async Task Delete(TaskAccessData access)
 		{
 			var executables = dataContext.Exeсutables.Where(i => i.Task_id == access.Task_id
 			&& i.User_id == access.User_id);
 			var task = dataContext.Tasks.Single(i => i.Id == access.Task_id);
-			RemoveExecutables(executables);
-			string nameDirectory = $"{task.User_id}\\{task.Title}\\executables\\{access.User_id}";
-			DeleteDirectory(nameDirectory);
+			await RemoveExecutables(executables);
+			
 			dataContext.TaskAccesses.Remove(access);
+			DeleteDirectory($"{task.User_id}\\{task.Title}\\executables\\{access.User_id}");
 		}
 
 		private void Delete(IEnumerable<AccessDeleteData> accesses)
@@ -155,20 +155,21 @@ namespace Web_practice.Utilities
 			dataContext.TaskAccesses.RemoveRange(accesses.Select(i => i.Access));
 		}
 
-		public void Delete(TaskData task)
+		public async Task Delete(TaskData task)
 		{
 			var executables = dataContext.Exeсutables.Where(i => i.Task_id == task.Id);
 			var accesses = dataContext.TaskAccesses.Where(i => i.Task_id == task.Id);
 			var tests = dataContext.Tests.Where(i => i.Task_id == task.Id);
 
-			DeleteDirectory($"{task.User_id}\\{task.Title}");
-			RemoveExecutables(executables);
+			
+			await RemoveExecutables(executables);
 			dataContext.TaskAccesses.RemoveRange(accesses);
 			dataContext.Tests.RemoveRange(tests);
 			dataContext.Tasks.Remove(task);
+			DeleteDirectory($"{task.User_id}\\{task.Title}");
 		}
 
-		private void Delete(IEnumerable<TaskData> tasks)
+		private async Task Delete(IEnumerable<TaskData> tasks)
 		{
 			var executables = (from task in tasks
 							   join exe in dataContext.Exeсutables on task.Id equals exe.Task_id
@@ -182,13 +183,13 @@ namespace Web_practice.Utilities
 						 select test);
 
 			
-			RemoveExecutables(executables);
+			await RemoveExecutables(executables);
 			dataContext.TaskAccesses.RemoveRange(accesses);
 			dataContext.Tests.RemoveRange(tests);
 			dataContext.Tasks.RemoveRange(tasks);
 		}
 
-		public void Delete(UserData user)
+		public async Task Delete(UserData user)
 		{
 			var executables = dataContext.Exeсutables.Where(i => i.User_id == user.Id);
 			var tasks = dataContext.Tasks.Where(i => i.User_id == user.Id);
@@ -202,9 +203,9 @@ namespace Web_practice.Utilities
 							});
 			
 
-			RemoveExecutables(executables);
+			await RemoveExecutables(executables);
 			Delete(accessesDelete);
-			Delete(tasks);
+			await Delete(tasks);
 			dataContext.Users.Remove(user);
 			DeleteDirectory(user.Id.ToString());
 		}

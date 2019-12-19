@@ -31,10 +31,8 @@ namespace Web_practice
 			var options = optionsBuilder
 				.UseSqlServer(connectionString)
 				.Options;
-			var db = new DataContext(options);
 			string env = "C:\\Users\\Евгений\\Desktop\\Программы\\AM-MP.2semestr\\web_practice\\Web_practice\\wwwroot\\data\\";
-			MyEnvironment.Init(db, env);
-			Executor.Init(db); 
+			MyEnvironment.Init(env);
 			CreateHostBuilder(args).Build().Run();
 		}
 

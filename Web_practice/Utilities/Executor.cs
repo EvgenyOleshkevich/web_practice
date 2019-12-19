@@ -18,177 +18,271 @@ using Web_practice.Models.Pages.Account;
 using Web_practice.Models.Pages;
 using System.Diagnostics;
 using System.Threading;
+using System.ComponentModel;
 
 namespace Web_practice.Utilities
 {
 	public class Executor
 	{
-		public static Executor GetInstance(DataContext dataContext)
+		public static Executor GetInstance()
 		{
-			instance.dataContext = dataContext;
+			if (instance == null)
+				instance = new Executor();
 			return instance;
 		}
 
-		public static void Init(DataContext dataContext)
+		public void AddExecutable(TaskData _task, ExecutableData _exe, string _path_res, DataContext dataContext)
 		{
-			instance = new Executor(dataContext);
-		}
-
-		public void StartTests(TaskData _task, ExecutableData _exe, string _path_res)
-		{
-			exe = _exe;
-			path_res = _path_res + "/";
-			
-			task = _task;
-			//StartTests();
-			tests1 = dataContext.Tests.Where(i =>
-			i.Task_id == task.Id && i.Path_reference == null).ToArray();
-			tests2 = dataContext.Tests.Where(i =>
-			i.Task_id == task.Id && i.Path_reference == null).ToArray();
-
-			Token = new CancellationTokenSource();
-			C_token = Token.Token;
-
-			Execution = Task.Run(() =>
-			{
-				// Were we already canceled?
-				C_token.ThrowIfCancellationRequested();
-				StartTests();
-			}, Token.Token);
-			//q.Start();
-		}
-
-		public void StartTests()
-		{
-			exe.Path_stat = path_res + "statistic.csv";
-			stat = new StreamWriter(env + exe.Path_stat);
-			StartTests_NoRef();
-			if (C_token.IsCancellationRequested)
-				//C_token.ThrowIfCancellationRequested();
-				return;
-			StartTests_Ref();
-			MyEnvironment.GetInstance(dataContext).DeleteFile(exe.Path_exe);
-			exe.Path_exe = null;
-			dataContext.Attach(exe).State = EntityState.Modified;
+			dataContext.Exeсutables.Add(_exe);
 			dataContext.SaveChanges();
+			var pr = new Program
+			{
+				path_res = _path_res + "/",
+				tests_ref = dataContext.Tests.Where(i =>
+					i.Task_id == _task.Id && i.Path_reference != null).ToArray(),
+				tests = dataContext.Tests.Where(i =>
+					i.Task_id == _task.Id && i.Path_reference == null).ToArray(),
+				exe = _exe,
+				path_cmp = _task.Path_cmp
+			};
+			var stat = new StreamWriter(env + _exe.Path_stat);
+			stat.WriteLine(0);
 			stat.Close();
+			var results = new List<ResultData>();
+			
+			foreach (var test in pr.tests)
+			{
+				results.Add(new ResultData()
+				{
+					Exe_id = pr.exe.Id,
+					Test_id = test.Id,
+					Path_res = $"{pr.path_res}{test.Title}.txt"
+				});
+			}
+			foreach (var test in pr.tests_ref)
+			{
+				results.Add(new ResultData()
+				{
+					Exe_id = pr.exe.Id,
+					Test_id = test.Id,
+					Path_res = $"{pr.path_res}{test.Title}.txt"
+				});
+			}
+
+			dataContext.Results.AddRange(results);
+			dataContext.SaveChanges();
+			queue = queue.Append(pr).ToList();
+			if (queue.Count() == 1)
+				RunExecutables();
 		}
 
-		private Executor(TaskData _task, ExecutableData _exe, string _path_res,
-			DataContext _dataContext,
-			MyEnvironment environment)
+		public async Task Delete(ExecutableData _executable)
 		{
-			dataContext = _dataContext;
-			exe = _exe;
-			path_res = _path_res + "/";
-			env = environment.Env;
-			exe.Path_stat = path_res + "statistic.csv";
-			stat = new StreamWriter(env + exe.Path_stat);
-			task = _task;
+			if (queue.FirstOrDefault(i => i.exe.Id == _executable.Id) == null)
+				return;
+			executable = _executable;
+			token.Cancel();
+			await exec_ranner;
+			token.Dispose();
+			executable = null;
+			if (queue.Count() > 0)
+				RunExecutables();
 		}
 
-		private Executor(DataContext _dataContext)
+		public async Task Delete(IEnumerable<ExecutableData> executables)
 		{
-			dataContext = _dataContext;
-			env = MyEnvironment.GetInstance(dataContext).Env;
+			del_queue = (from prog in queue
+			join exe in executables on prog.exe.Id equals exe.Id
+			select prog).ToList();
+			if (del_queue.Count() == 0)
+				return;
+			token.Cancel();
+			await exec_ranner;
+			token.Dispose();
+			del_queue = null;
+			if (queue.Count() > 0)
+				RunExecutables();
 		}
+
+		private class Program
+		{
+			public string path_res;
+			public TestData[] tests_ref;
+			public TestData[] tests;
+			public ExecutableData exe;
+			public string path_cmp;
+		}
+
 
 		static private Executor instance;
-		private DataContext dataContext;
-		[Obsolete]
-		private string path_res;
-		private string env;
-		private StreamWriter stat;
-		private ExecutableData exe;
-		private TaskData task;
-		private TestData[] tests1;
-		private TestData[] tests2;
-		public Task Execution { get; private set; }
-		public CancellationToken C_token { get; private set; }
-		public CancellationTokenSource Token { get; set; }
+		private readonly string env;
+		private Task exec_ranner;
+		private CancellationToken c_token;
+		private CancellationTokenSource token;
+		private List<Program> queue;
+		private List<Program> del_queue;
+		private ExecutableData executable;
+
+		private Executor()
+		{
+			env = MyEnvironment.GetInstance().Env;
+			queue = new List<Program>();
+		}
+
+		private void RunExecutables()
+		{
+			token = new CancellationTokenSource();
+			c_token = token.Token;
+			exec_ranner = Task.Run(() =>
+			{
+				while (queue.Count() > 0)
+				{
+					StartTests(queue.First());
+					if (c_token.IsCancellationRequested)
+						break;
+					queue.Remove(queue.First());
+				}
+			}, c_token);
+		}
+
+		private void StartTests(Program program)
+		{
+			var stat = new StreamWriter(env + program.exe.Path_stat);
+			StartTests_NoRef(program, stat);
+			if (c_token.IsCancellationRequested)
+				return;
+			StartTests_Ref(program, stat);
+			stat.Close();
+			while (!MyEnvironment.GetInstance().DeleteFile(program.exe.Path_exe))
+			{ }
+
+		}
 
 		private bool DefaultCMP(string path1, string path2)
 		{
 			return true;
 		}
 
-		private bool CMP(string path1, string path2)
+		private bool CMP(Program pr, string path1, string path2)
 		{
-			if (task.Path_cmp == null)
+			if (pr.path_cmp == null)
 				return DefaultCMP(path1, path2);
 			return true;
-			var process = Process.Start(task.Path_cmp, $"{path1} {path2}");
+			var process = Process.Start(pr.path_cmp, $"{path1} {path2}");
 			process.WaitForExit();
 			return "1" == process.StandardOutput.ReadToEnd();
 		}
 
-		private void StartTests_Ref()
+		private void StartTests_Ref(Program pr, StreamWriter stat)
 		{
-			if (tests2.Count() == 0)
+			if (pr.tests_ref.Count() == 0)
 				return;
 
-			var times = new int[tests2.Count()];
-			var is_completes = new bool[tests2.Count()];
+			var times = new int[pr.tests_ref.Count()];
+			var is_completes = new bool[pr.tests_ref.Count()];
 			stat.WriteLine("test_name; time; result");
-			var results = new List<ResultData>();
-			for (int i = 0; i < tests2.Count(); ++i)
-			{
-				var test = env + tests2[i].Path_test;
-				var reference = env + tests2[i].Path_reference;
-				var res = $"{path_res}{tests2[i].Title}.txt";
 
-				var process = Process.Start(env + exe.Path_exe, $"1 {test} {env + res}");
-				process.WaitForExit();
-				times[i] = process.UserProcessorTime.Milliseconds;
-				results.Add(new ResultData()
+			for (int i = 0; i < pr.tests_ref.Count(); ++i)
+			{
+				var test = env + pr.tests_ref[i].Path_test;
+				var reference = env + pr.tests_ref[i].Path_reference;
+				var file = new FileInfo(test);
+				if (!file.Exists)
 				{
-					Exe_id = exe.Id,
-					Test_id = tests2[i].Id,
-					Path_res = res
-				});
-				is_completes[i] = CMP(res, reference);
-				stat.WriteLine($"{ tests2[i].Title}; { times[i]};");
-			}
-			dataContext.Results.AddRange(results);
-		}
+					times[i] = 0;
+					is_completes[i] = false;
+					stat.WriteLine($"{ pr.tests_ref[i].Title}; { times[i]};{is_completes[i]};");
+					continue;
+				}
+				var file_catcher = file.OpenRead();
+				var res = $"{pr.path_res}{pr.tests_ref[i].Title}.txt";
 
-		private void StartTests_NoRef()
-		{
-			if (tests1.Count() == 0)
-				return;
-
-			var times = new int[tests1.Count()];
-			stat.WriteLine("test_name; time");
-			var results = new List<ResultData>();
-			for (int i = 0; i < tests1.Count(); ++i)
-			{
-				var test = env + tests1[i].Path_test;
-				var res = $"{path_res}{tests1[i].Title}.txt";
-
-				var process = Process.Start(env + exe.Path_exe, $"1 {test} {env + res}");
-				//process.WaitForExit();
+				Process process;
+				try
+				{
+					process = Process.Start(env + pr.exe.Path_exe, $"1 {test} {env + res}");
+				}
+				catch (Win32Exception e)
+				{
+					stat.WriteLine("could not to execute this file");
+					return;
+				}
 				while (!process.HasExited)
 				{
-					if (C_token.IsCancellationRequested)
+					if (c_token.IsCancellationRequested)
 					{
 						process.Kill();
-						//C_token.ThrowIfCancellationRequested();
+						process.Dispose();
 						stat.Close();
+						if (executable != null)
+							queue.Remove(queue.FirstOrDefault(i => i.exe.Id == executable.Id));
+						else
+						{
+							foreach (var prog in del_queue)
+								queue.Remove(prog);
+						}
 						return;
 					}
 				}
 				times[i] = process.UserProcessorTime.Milliseconds;
-				results.Add(new ResultData()
-				{
-					Exe_id = exe.Id,
-					Test_id = tests1[i].Id,
-					Path_res = res
-				});
-				stat.WriteLine($"{ tests1[i].Title}; { times[i]};");
+				process.Kill();
+				process.Dispose();
+				is_completes[i] = CMP(pr, res, reference);
+				stat.WriteLine($"{ pr.tests_ref[i].Title}; { times[i]};{is_completes[i]};");
+				file_catcher.Close();
 			}
-			dataContext.Results.AddRange(results);
 		}
 
-		
+		private void StartTests_NoRef(Program pr, StreamWriter stat)
+		{
+			if (pr.tests.Count() == 0)
+				return;
+
+			var times = new int[pr.tests.Count()];
+			stat.WriteLine("test_name; time; result");
+			for (int i = 0; i < pr.tests.Count(); ++i)
+			{
+				var test = env + pr.tests[i].Path_test;
+				var file = new FileInfo(test);
+				if (!file.Exists)
+				{
+					times[i] = 0;
+					stat.WriteLine($"{ pr.tests[i].Title}; { times[i]};");
+					continue;
+				}
+				var file_catcher = file.OpenRead();
+				var res = $"{pr.path_res}{pr.tests[i].Title}.txt";
+				Process process;
+				try
+				{
+					process = Process.Start(env + pr.exe.Path_exe, $"1 {test} {env + res}");
+				} catch (Win32Exception e)
+				{
+					stat.WriteLine("could not to execute this file");
+					return;
+				}
+				//process.WaitForExit();
+				while (!process.HasExited)
+				{
+					if (c_token.IsCancellationRequested)
+					{
+						process.Kill();
+						process.Dispose();
+						stat.Close();
+						if (executable != null)
+							queue.Remove(queue.FirstOrDefault(i => i.exe.Id == executable.Id));
+						else
+							foreach (var prog in del_queue)
+								queue.Remove(prog);
+						return;
+					}
+				}
+				times[i] = process.UserProcessorTime.Milliseconds;
+				process.Kill();
+				process.Dispose();
+				stat.WriteLine($"{ pr.tests[i].Title}; { times[i]};");
+				file_catcher.Close();
+			}
+		}
 	}
 }

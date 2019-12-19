@@ -24,7 +24,6 @@ namespace Web_practice.Controllers
 	public class TaskController : Controller
 	{
 		private readonly DataContext dataContext;
-		[Obsolete]
 		private readonly MyEnvironment environment;
 
 		public TaskController(DataContext _dataContext,
@@ -198,11 +197,13 @@ namespace Web_practice.Controllers
 
 
 		[HttpPost]
-		public IActionResult TaskDelete()
+		public async Task<IActionResult> TaskDelete()
 		{
 			var taskId = GetTaskId();
-			var task = dataContext.Tasks.Single(i => i.Id == taskId);
-			environment.Delete(task);
+			var task = dataContext.Tasks.FirstOrDefault(i => i.Id == taskId);
+			if (task == null)
+				return Redirect("~/Account/Profile");
+			await environment.Delete(task);
 			dataContext.SaveChanges();
 			return Redirect("~/Account/Profile");
 		}
@@ -325,13 +326,15 @@ namespace Web_practice.Controllers
 
 
 		[HttpPost]
-		public IActionResult AccessDelete(string accessIdEncode)
+		public async Task<IActionResult> AccessDelete(string accessIdEncode)
 		{
 			var accessIdDecoded = ProtectData.GetInstance().DecodeToString(accessIdEncode);
 			var accessId = Int32.Parse(accessIdDecoded);
 			var access = dataContext.TaskAccesses.Single(i => i.Id == accessId);
 
-			environment.Delete(access);
+			if (access == null)
+				return Redirect("~/Account/Profile");
+			await environment.Delete(access);
 			dataContext.SaveChanges();
 
 			return Redirect("Task");
@@ -403,11 +406,15 @@ namespace Web_practice.Controllers
 		{
 			var testIdDecoded = ProtectData.GetInstance().DecodeToString(testIdEncode);
 			var testId = Int32.Parse(testIdDecoded);
-			var test = dataContext.Tests.Single(i => i.Id == testId);
+			var test = dataContext.Tests.FirstOrDefault(i => i.Id == testId);
 
-			environment.DeleteFile(test.Path_test);
+			if (test == null || !environment.DeleteFile(test.Path_test))
+			{
+				return Redirect("Task");
+			}
 			if (test.Path_reference != null)
-				environment.DeleteFile(test.Path_reference);
+				while (!environment.DeleteFile(test.Path_reference))
+				{ }
 
 			dataContext.Tests.Remove(test);
 			dataContext.SaveChanges();
@@ -434,7 +441,7 @@ namespace Web_practice.Controllers
 			var task = dataContext.Tasks.Single(i => i.Id == taskId);
 
 			if (dataContext.Exeсutables.FirstOrDefault(i => (i.User_id == user_id)
-			&& (i.Title == model.Title) && (i.Task_id == taskId)) != null)
+			&& (i.Task_id == taskId) && (i.Title == model.Title)) != null)
 			{
 				model.Errors.Add("файл с таким названием уже существует");
 				ModelState.AddModelError("", "файл с таким названием уже существует");
@@ -454,12 +461,10 @@ namespace Web_practice.Controllers
 				Title = model.Title,
 				User_id = user_id,
 				Path_exe = pathCode,
-				Path_stat = null,
+				Path_stat = nameDirectory + "/statistic.csv",
 				Task_id = taskId
 			};
-			dataContext.Exeсutables.Add(exe);
-			dataContext.SaveChanges();
-			Executor.GetInstance(dataContext).StartTests(task, exe, nameDirectory);
+			Executor.GetInstance().AddExecutable(task, exe, nameDirectory, dataContext);
 			return Redirect("Task");
 		}
 
@@ -468,7 +473,9 @@ namespace Web_practice.Controllers
 		{
 			var exeIdDecoded = ProtectData.GetInstance().DecodeToString(exeIdEncode);
 			var exeId = Int32.Parse(exeIdDecoded);
-			var exe = dataContext.Exeсutables.Single(i => i.Id == exeId);
+			var exe = dataContext.Exeсutables.FirstOrDefault(i => i.Id == exeId);
+			if (exe == null)
+				return Redirect("Task");
 			await environment.Delete(exe);
 			dataContext.SaveChanges();
 
