@@ -21,14 +21,34 @@ namespace Web_practice.Utilities
 {
 	public class MyEnvironment
 	{
-		public MyEnvironment(DataContext _dataContext,
+		public static MyEnvironment GetInstance(DataContext dataContext)
+		{
+			instance.dataContext = dataContext;
+			return instance;
+		}
+
+		public static void Init(DataContext dataContext, string env)
+		{
+			instance = new MyEnvironment(dataContext, env);
+		}
+
+		private MyEnvironment(DataContext _dataContext,
 			IHostingEnvironment appEnvironment)
 		{
 			dataContext = _dataContext;
 			Env = appEnvironment.WebRootPath + "/data/";
 		}
 
-		private readonly DataContext dataContext;
+		private MyEnvironment(DataContext _dataContext,
+			string env)
+		{
+			dataContext = _dataContext;
+			Env = env;
+		}
+
+
+		private static MyEnvironment instance;
+		private DataContext dataContext;
 		public string Env { get; }
 
 		private class AccessDeleteData
@@ -83,9 +103,17 @@ namespace Web_practice.Utilities
 			dataContext.Exeсutables.RemoveRange(executables);
 		}
 
-		public void Delete(ExecutableData executable)
+		public async Task Delete(ExecutableData executable)
 		{
 			FileInfo file;
+
+			if (Executor.GetInstance(dataContext).Token != null)
+			{
+				Executor.GetInstance(dataContext).Token.Cancel();
+				await Executor.GetInstance(dataContext).Execution;
+				Executor.GetInstance(dataContext).Token.Dispose();
+				Executor.GetInstance(dataContext).Token = null;
+			}
 			if (executable.Path_exe != null)
 				file = new FileInfo(Env + executable.Path_exe);
 			else

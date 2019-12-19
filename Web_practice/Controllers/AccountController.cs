@@ -32,7 +32,8 @@ namespace Web_practice.Controllers
 		{
 			ProtectData.GetInstance().Initialize(provider);
 			dataContext = _dataContext;
-			environment = new MyEnvironment(dataContext, appEnvironment);
+			//environment = new MyEnvironment(dataContext, appEnvironment);
+			environment = MyEnvironment.GetInstance(dataContext);
 		}
 
 

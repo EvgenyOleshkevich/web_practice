@@ -17,43 +17,95 @@ using Web_practice.Models.DB;
 using Web_practice.Models.Pages.Account;
 using Web_practice.Models.Pages;
 using System.Diagnostics;
+using System.Threading;
 
 namespace Web_practice.Utilities
 {
 	public class Executor
 	{
-		public Executor(TaskData _task, ExecutableData _exe, string _path_res,
-			DataContext _dataContext,
-			MyEnvironment _environment)
+		public static Executor GetInstance(DataContext dataContext)
 		{
-			dataContext = _dataContext;
+			instance.dataContext = dataContext;
+			return instance;
+		}
+
+		public static void Init(DataContext dataContext)
+		{
+			instance = new Executor(dataContext);
+		}
+
+		public void StartTests(TaskData _task, ExecutableData _exe, string _path_res)
+		{
 			exe = _exe;
 			path_res = _path_res + "/";
-			environment = _environment;
-			env = environment.Env;
+			
+			task = _task;
+			//StartTests();
+			tests1 = dataContext.Tests.Where(i =>
+			i.Task_id == task.Id && i.Path_reference == null).ToArray();
+			tests2 = dataContext.Tests.Where(i =>
+			i.Task_id == task.Id && i.Path_reference == null).ToArray();
+
+			Token = new CancellationTokenSource();
+			C_token = Token.Token;
+
+			Execution = Task.Run(() =>
+			{
+				// Were we already canceled?
+				C_token.ThrowIfCancellationRequested();
+				StartTests();
+			}, Token.Token);
+			//q.Start();
+		}
+
+		public void StartTests()
+		{
 			exe.Path_stat = path_res + "statistic.csv";
 			stat = new StreamWriter(env + exe.Path_stat);
-			task = _task;
-			
 			StartTests_NoRef();
+			if (C_token.IsCancellationRequested)
+				//C_token.ThrowIfCancellationRequested();
+				return;
 			StartTests_Ref();
-			environment.DeleteFile(exe.Path_exe);
+			MyEnvironment.GetInstance(dataContext).DeleteFile(exe.Path_exe);
 			exe.Path_exe = null;
 			dataContext.Attach(exe).State = EntityState.Modified;
 			dataContext.SaveChanges();
 			stat.Close();
 		}
 
+		private Executor(TaskData _task, ExecutableData _exe, string _path_res,
+			DataContext _dataContext,
+			MyEnvironment environment)
+		{
+			dataContext = _dataContext;
+			exe = _exe;
+			path_res = _path_res + "/";
+			env = environment.Env;
+			exe.Path_stat = path_res + "statistic.csv";
+			stat = new StreamWriter(env + exe.Path_stat);
+			task = _task;
+		}
 
-		private readonly DataContext dataContext;
+		private Executor(DataContext _dataContext)
+		{
+			dataContext = _dataContext;
+			env = MyEnvironment.GetInstance(dataContext).Env;
+		}
+
+		static private Executor instance;
+		private DataContext dataContext;
 		[Obsolete]
-		private readonly IHostingEnvironment appEnvironment;
 		private string path_res;
 		private string env;
 		private StreamWriter stat;
 		private ExecutableData exe;
 		private TaskData task;
-		private MyEnvironment environment;
+		private TestData[] tests1;
+		private TestData[] tests2;
+		public Task Execution { get; private set; }
+		public CancellationToken C_token { get; private set; }
+		public CancellationTokenSource Token { get; set; }
 
 		private bool DefaultCMP(string path1, string path2)
 		{
@@ -72,63 +124,71 @@ namespace Web_practice.Utilities
 
 		private void StartTests_Ref()
 		{
-			var tests = dataContext.Tests.Where(i =>
-			i.Task_id == task.Id && i.Path_reference != null).ToArray();
-			if (tests.Count() == 0)
+			if (tests2.Count() == 0)
 				return;
 
-			var times = new int[tests.Count()];
-			var is_completes = new bool[tests.Count()];
+			var times = new int[tests2.Count()];
+			var is_completes = new bool[tests2.Count()];
 			stat.WriteLine("test_name; time; result");
 			var results = new List<ResultData>();
-			for (int i = 0; i < tests.Count(); ++i)
+			for (int i = 0; i < tests2.Count(); ++i)
 			{
-				var test = env + tests[i].Path_test;
-				var reference = env + tests[i].Path_reference;
-				var res = $"{path_res}{tests[i].Title}.txt";
+				var test = env + tests2[i].Path_test;
+				var reference = env + tests2[i].Path_reference;
+				var res = $"{path_res}{tests2[i].Title}.txt";
 
-				var process = Process.Start(env + exe.Path_exe, $"4 {test} {env + res}");
+				var process = Process.Start(env + exe.Path_exe, $"1 {test} {env + res}");
 				process.WaitForExit();
 				times[i] = process.UserProcessorTime.Milliseconds;
 				results.Add(new ResultData()
 				{
 					Exe_id = exe.Id,
-					Test_id = tests[i].Id,
+					Test_id = tests2[i].Id,
 					Path_res = res
 				});
 				is_completes[i] = CMP(res, reference);
-				stat.WriteLine($"{ tests[i].Title}; { times[i]};");
+				stat.WriteLine($"{ tests2[i].Title}; { times[i]};");
 			}
 			dataContext.Results.AddRange(results);
 		}
 
 		private void StartTests_NoRef()
 		{
-			var tests = dataContext.Tests.Where(i =>
-			i.Task_id == task.Id && i.Path_reference == null).ToArray();
-			if (tests.Count() == 0)
+			if (tests1.Count() == 0)
 				return;
 
-			var times = new int[tests.Count()];
+			var times = new int[tests1.Count()];
 			stat.WriteLine("test_name; time");
 			var results = new List<ResultData>();
-			for (int i = 0; i < tests.Count(); ++i)
+			for (int i = 0; i < tests1.Count(); ++i)
 			{
-				var test = env + tests[i].Path_test;
-				var res = $"{path_res}{tests[i].Title}.txt";
+				var test = env + tests1[i].Path_test;
+				var res = $"{path_res}{tests1[i].Title}.txt";
 
-				var process = Process.Start(env + exe.Path_exe, $"4 {test} {env + res}");
-				process.WaitForExit();
+				var process = Process.Start(env + exe.Path_exe, $"1 {test} {env + res}");
+				//process.WaitForExit();
+				while (!process.HasExited)
+				{
+					if (C_token.IsCancellationRequested)
+					{
+						process.Kill();
+						//C_token.ThrowIfCancellationRequested();
+						stat.Close();
+						return;
+					}
+				}
 				times[i] = process.UserProcessorTime.Milliseconds;
 				results.Add(new ResultData()
 				{
 					Exe_id = exe.Id,
-					Test_id = tests[i].Id,
+					Test_id = tests1[i].Id,
 					Path_res = res
 				});
-				stat.WriteLine($"{ tests[i].Title}; { times[i]};");
+				stat.WriteLine($"{ tests1[i].Title}; { times[i]};");
 			}
 			dataContext.Results.AddRange(results);
 		}
+
+		
 	}
 }

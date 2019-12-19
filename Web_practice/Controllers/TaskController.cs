@@ -33,7 +33,7 @@ namespace Web_practice.Controllers
 		{
 			ProtectData.GetInstance().Initialize(provider);
 			dataContext = _dataContext;
-			environment = new MyEnvironment(dataContext, _appEnvironment);
+			environment = MyEnvironment.GetInstance(dataContext);
 		}
 		private int GetUserId()
 		{
@@ -459,17 +459,17 @@ namespace Web_practice.Controllers
 			};
 			dataContext.Exeсutables.Add(exe);
 			dataContext.SaveChanges();
-			var executor = new Executor(task, exe, nameDirectory, dataContext, environment);
+			Executor.GetInstance(dataContext).StartTests(task, exe, nameDirectory);
 			return Redirect("Task");
 		}
 
 		[HttpPost]
-		public IActionResult ExecutableDelete(string exeIdEncode)
+		public async Task<IActionResult> ExecutableDelete(string exeIdEncode)
 		{
 			var exeIdDecoded = ProtectData.GetInstance().DecodeToString(exeIdEncode);
 			var exeId = Int32.Parse(exeIdDecoded);
 			var exe = dataContext.Exeсutables.Single(i => i.Id == exeId);
-			environment.Delete(exe);
+			await environment.Delete(exe);
 			dataContext.SaveChanges();
 
 			return Redirect("Task");
