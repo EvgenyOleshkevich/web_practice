@@ -161,17 +161,34 @@ namespace Web_practice.Utilities
 
 		private bool DefaultCMP(string path1, string path2)
 		{
-			return true;
+			var file1 = new StreamReader(path1);
+			var file2 = new StreamReader(path2);
+			var str1 = file1.ReadToEnd();
+			var str2 = file2.ReadToEnd();
+			file1.Close();
+			file2.Close();
+			return str1 == str2;
 		}
 
 		private bool CMP(Program pr, string path1, string path2)
 		{
+			if (!(new FileInfo(path1).Exists) || !(new FileInfo(path2).Exists))
+				return false;
 			if (pr.path_cmp == null)
 				return DefaultCMP(path1, path2);
-			return true;
-			var process = Process.Start(pr.path_cmp, $"{path1} {path2}");
+			Process process;
+			try
+			{
+				process = Process.Start(env + pr.path_cmp, $"{path1} {path2}");
+			}
+			catch (Win32Exception e)
+			{
+				return false;
+			}
+			
 			process.WaitForExit();
-			return "1" == process.StandardOutput.ReadToEnd();
+			var y = process.ExitCode;
+			return 1 == y;
 		}
 
 		private void StartTests_Ref(Program pr, StreamWriter stat)
@@ -228,7 +245,7 @@ namespace Web_practice.Utilities
 				times[i] = process.UserProcessorTime.Milliseconds;
 				process.Kill();
 				process.Dispose();
-				is_completes[i] = CMP(pr, res, reference);
+				is_completes[i] = CMP(pr, env + res, reference);
 				stat.WriteLine($"{ pr.tests_ref[i].Title}; { times[i]};{is_completes[i]};");
 				file_catcher.Close();
 			}
