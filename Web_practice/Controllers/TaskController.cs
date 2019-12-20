@@ -370,12 +370,14 @@ namespace Web_practice.Controllers
 			if (model.Reference_path != null)
 			{
 				string nameDirectoryTest = $"{task.User_id}/{task.Title}/tests_ref/";
-				string nameFileTest = model.Test_path.FileName.Split("\\").Last();
-				pathTest = nameDirectoryTest + $"{model.Title}_{nameFileTest}";
+				//string nameFileTest = model.Test_path.FileName.Split("\\").Last();
+				string nameFile = model.Title + ".txt";
+				//pathTest = nameDirectoryTest + $"{model.Title}_{nameFileTest}";
+				pathTest = nameDirectoryTest + nameFile;
 
 				string nameDirectoryRef = $"{task.User_id}/{task.Title}/references/";
-				string nameFileRef = model.Reference_path.FileName.Split("\\").Last();
-				pathRef = nameDirectoryRef + $"{model.Title}_{nameFileRef}";
+				//string nameFileRef = model.Reference_path.FileName.Split("\\").Last();
+				pathRef = nameDirectoryRef + nameFile;
 
 				environment.CreateFileCode(model.Test_path, pathTest);
 				environment.CreateFileCode(model.Reference_path, pathRef);
@@ -383,8 +385,9 @@ namespace Web_practice.Controllers
 			else
 			{
 				string nameDirectoryTest = $"{task.User_id}/{task.Title}/tests/";
-				string nameFileTest = model.Test_path.FileName.Split("\\").Last();
-				pathTest = nameDirectoryTest + $"{model.Title}_{nameFileTest}";
+				//string nameFileTest = model.Test_path.FileName.Split("\\").Last();
+				string nameFile = model.Title + ".txt";
+				pathTest = nameDirectoryTest + nameFile;
 
 				environment.CreateFileCode(model.Test_path, pathTest);
 			}
@@ -399,6 +402,24 @@ namespace Web_practice.Controllers
 			dataContext.Tests.Add(test);
 			dataContext.SaveChanges();
 			return Redirect("Task");
+		}
+
+		[HttpGet]
+		public IActionResult Test(string testIdEncode)
+		{
+			var testIdDecoded = ProtectData.GetInstance().DecodeToString(testIdEncode);
+			var testId = Int32.Parse(testIdDecoded);
+			var test = dataContext.Tests.FirstOrDefault(i => i.Id == testId);
+			if (test == null)
+				return Redirect("Task");
+			var reader = new StreamReader(environment.Env + test.Path_test);
+			var model = new TestModel()
+			{
+				Test = test,
+				TestContent = reader.ReadToEnd()
+			};
+			reader.Close();
+			return View(model);
 		}
 
 		[HttpPost]
@@ -468,6 +489,39 @@ namespace Web_practice.Controllers
 			return Redirect("Task");
 		}
 
+
+		[HttpGet]
+		public IActionResult Executable(string exeIdEncode)
+		{
+			var exeIdDecoded = ProtectData.GetInstance().DecodeToString(exeIdEncode);
+			var exeId = Int32.Parse(exeIdDecoded);
+			var exe = dataContext.Exeсutables.FirstOrDefault(i => i.Id == exeId);
+			if (exe == null)
+				return Redirect("Task");
+			var results = dataContext.Results.Where(i => i.Exe_id == exeId);
+			string statistic = "calculating process...";
+			bool isCalculated = false;
+			try
+			{
+				var reader = new StreamReader(environment.Env + exe.Path_stat);
+				statistic = reader.ReadToEnd();
+				reader.Close();
+				isCalculated = !(new FileInfo(environment.Env + exe.Path_exe)).Exists;
+			} catch (Exception e)
+			{
+
+			}
+			var model = new ExecutableModel()
+			{
+				Executable = exe,
+				Results = results,
+				IsCalculated = isCalculated,
+				Statistic = statistic
+			};
+
+			return View(model);
+		}
+
 		[HttpPost]
 		public async Task<IActionResult> ExecutableDelete(string exeIdEncode)
 		{
@@ -480,6 +534,33 @@ namespace Web_practice.Controllers
 			dataContext.SaveChanges();
 
 			return Redirect("Task");
+		}
+
+		[HttpGet]
+		public IActionResult Result(string resIdEncode)
+		{
+			var resIdDecoded = ProtectData.GetInstance().DecodeToString(resIdEncode);
+			var resId = Int32.Parse(resIdDecoded);
+			var res = dataContext.Results.FirstOrDefault(i => i.Id == resId);
+			if (res == null)
+				return Redirect("Task");
+
+			string content = null;
+			var file = new FileInfo(environment.Env + res.Path_res);
+			if (file.Exists)
+			{
+				var reader = new StreamReader(environment.Env + res.Path_res);
+				content = reader.ReadToEnd();
+				reader.Close();
+			}
+			
+			var model = new ResultModel()
+			{
+				Result = res,
+				ResultContent = content
+			};
+
+			return View(model);
 		}
 		#endregion
 	}

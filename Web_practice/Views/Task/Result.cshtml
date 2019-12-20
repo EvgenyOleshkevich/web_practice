@@ -1,18 +1,28 @@
 ﻿@model Web_practice.Models.Pages.Task.ResultModel
 
 @{
-    ViewData["Title"] = "Result";
+	ViewData["Title"] = "Result";
 }
 
 <h1>Result</h1>
 
+@if (Model.ResultContent != null)
+{
+<textarea readonly cols="50" rows="20">
+	@Model.ResultContent
+</textarea>
+}
+else
+{
+	<textarea readonly cols="30" rows="5">
+	результат пуст
+	1. либо он еще не выполнен
+	2. либо тест для него удален и результата можно не ждать
+	</textarea>
+}
+
+
 <div>
-    <h4>ResultModel</h4>
-    <hr />
-    <dl class="row">
-    </dl>
-</div>
-<div>
-    @Html.ActionLink("Edit", "Edit", new { /* id = Model.PrimaryKey */ }) |
-    <a asp-action="Index">Back to List</a>
+	@Html.ActionLink("Edit", "Edit", new { /* id = Model.PrimaryKey */ }) |
+	<a asp-action="Index">Back to List</a>
 </div>

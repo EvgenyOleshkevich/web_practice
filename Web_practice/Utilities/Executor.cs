@@ -153,8 +153,9 @@ namespace Web_practice.Utilities
 				return;
 			StartTests_Ref(program, stat);
 			stat.Close();
-			while (!MyEnvironment.GetInstance().DeleteFile(program.exe.Path_exe))
-			{ }
+			bool is_deleted = MyEnvironment.GetInstance().DeleteFile(program.exe.Path_exe);
+			while (!is_deleted)
+				is_deleted = MyEnvironment.GetInstance().DeleteFile(program.exe.Path_exe);
 
 		}
 
@@ -239,7 +240,7 @@ namespace Web_practice.Utilities
 				return;
 
 			var times = new int[pr.tests.Count()];
-			stat.WriteLine("test_name; time; result");
+			stat.WriteLine("test_name; time");
 			for (int i = 0; i < pr.tests.Count(); ++i)
 			{
 				var test = env + pr.tests[i].Path_test;

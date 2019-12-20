@@ -101,6 +101,7 @@ namespace Web_practice.Utilities
 				}
 				catch (Exception e)
 				{
+					return false;
 				}
 			return true;
 		}

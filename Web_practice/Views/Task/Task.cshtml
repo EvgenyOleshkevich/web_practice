@@ -79,7 +79,7 @@
 				<div class="box">
 					<div class="inner">
 						<h3>@test.Title</h3>
-						<form asp-controller="Task" asp-action="TestRedaction" method="get">
+						<form asp-controller="Task" asp-action="Test" method="get">
 							<button type="submit" class="button fit" name="testIdEncode" value="@Web_practice.Utilities.ProtectData.GetInstance().Encode(test.Id)">открыть</button>
 						</form>
 						@if (Model.AccessLevel >= 20)
