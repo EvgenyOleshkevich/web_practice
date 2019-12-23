@@ -1,14 +1,9 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -30,7 +25,7 @@ namespace Web_practice
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
-			string connection = Configuration.GetConnectionString("DefaultConnection");
+			string connection = Configuration.GetConnectionString("InternetConnection");
 			services.AddDbContext<DataContext>(options => options.UseSqlServer(connection));
 
 			services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -38,8 +33,9 @@ namespace Web_practice
 
 			services.AddControllersWithViews();
 
-			services.AddDataProtection()
-				.PersistKeysToFileSystem(new DirectoryInfo(@"c:\keys"));
+			services.AddDataProtection();
+				//.PersistKeysToFileSystem(new DirectoryInfo(@"c:\keys"));
+				//.PersistKeysToRegistry(Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Sample\keys"));
 			services.AddDataProtection()
 			.SetDefaultKeyLifetime(TimeSpan.FromDays(14));
 
@@ -50,6 +46,7 @@ namespace Web_practice
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
 		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 		{
+			env.EnvironmentName = "Development";
 			if (env.IsDevelopment())
 			{
 				app.UseDeveloperExceptionPage();

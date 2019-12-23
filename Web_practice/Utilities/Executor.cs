@@ -181,7 +181,8 @@ namespace Web_practice.Utilities
 			{
 				process = Process.Start(env + pr.path_cmp, $"{path1} {path2}");
 			}
-			catch (Win32Exception e)
+			//catch (Win32Exception e)
+			catch
 			{
 				return false;
 			}
@@ -212,17 +213,18 @@ namespace Web_practice.Utilities
 					stat.WriteLine($"{ pr.tests_ref[i].Title}; { times[i]};{is_completes[i]};");
 					continue;
 				}
-				var file_catcher = file.OpenRead();
+				//var file_catcher = file.OpenRead();
 				var res = $"{pr.path_res}{pr.tests_ref[i].Title}.txt";
 
 				Process process;
 				try
 				{
-					process = Process.Start(env + pr.exe.Path_exe, $"1 {test} {env + res}");
+					process = Process.Start(env + pr.exe.Path_exe, $"4 {test} {env + res}");
 				}
 				catch (Win32Exception e)
 				{
 					stat.WriteLine("could not to execute this file");
+					stat.WriteLine(e.Message);
 					return;
 				}
 				while (!process.HasExited)
@@ -247,7 +249,7 @@ namespace Web_practice.Utilities
 				process.Dispose();
 				is_completes[i] = CMP(pr, env + res, reference);
 				stat.WriteLine($"{ pr.tests_ref[i].Title}; { times[i]};{is_completes[i]};");
-				file_catcher.Close();
+				//file_catcher.Close();
 			}
 		}
 
@@ -268,15 +270,16 @@ namespace Web_practice.Utilities
 					stat.WriteLine($"{ pr.tests[i].Title}; { times[i]};");
 					continue;
 				}
-				var file_catcher = file.OpenRead();
+				//var file_catcher = file.OpenRead();
 				var res = $"{pr.path_res}{pr.tests[i].Title}.txt";
 				Process process;
 				try
 				{
-					process = Process.Start(env + pr.exe.Path_exe, $"1 {test} {env + res}");
+					process = Process.Start(env + pr.exe.Path_exe, $"4 {test} {env + res}");
 				} catch (Win32Exception e)
 				{
 					stat.WriteLine("could not to execute this file");
+					stat.WriteLine(e.Message);
 					return;
 				}
 				//process.WaitForExit();
@@ -299,7 +302,7 @@ namespace Web_practice.Utilities
 				process.Kill();
 				process.Dispose();
 				stat.WriteLine($"{ pr.tests[i].Title}; { times[i]};");
-				file_catcher.Close();
+				//file_catcher.Close();
 			}
 		}
 	}

@@ -17,7 +17,6 @@ using Web_practice.Models.DB;
 using Web_practice.Utilities;
 using Web_practice.Models.Pages.Account;
 using Web_practice.Models.Pages;
-using System.IO;
 
 namespace Web_practice.Controllers
 {
@@ -32,8 +31,9 @@ namespace Web_practice.Controllers
 		{
 			ProtectData.GetInstance().Initialize(provider);
 			dataContext = _dataContext;
-			//environment = new MyEnvironment(dataContext, appEnvironment);
-			environment = MyEnvironment.GetInstance(dataContext);
+
+			string env = appEnvironment.WebRootPath + "\\data\\";
+			environment = MyEnvironment.GetInstance(dataContext, env);
 		}
 
 

@@ -17,22 +17,8 @@ namespace Web_practice
 	{
 		public static void Main(string[] args)
 		{
-			var builder = new ConfigurationBuilder();
-			// установка пути к текущему каталогу
-			builder.SetBasePath(Directory.GetCurrentDirectory());
-			// получаем конфигурацию из файла appsettings.json
-			builder.AddJsonFile("appsettings.json");
-			// создаем конфигурацию
-			var config = builder.Build();
-			// получаем строку подключения
-			string connectionString = config.GetConnectionString("DefaultConnection");
-
-			var optionsBuilder = new DbContextOptionsBuilder<DataContext>();
-			var options = optionsBuilder
-				.UseSqlServer(connectionString)
-				.Options;
-			string env = "C:\\Users\\Евгений\\Desktop\\Программы\\AM-MP.2semestr\\web_practice\\Web_practice\\wwwroot\\data\\";
-			MyEnvironment.Init(env);
+			//string env = "C:\\Users\\Евгений\\Desktop\\Программы\\AM-MP.2semestr\\web_practice\\Web_practice\\wwwroot\\data\\";
+			//MyEnvironment.Init(env);
 			CreateHostBuilder(args).Build().Run();
 		}
 

@@ -17,7 +17,7 @@
 				<ul class="text-danger">
 					@foreach (var error in Model.Errors)
 					{
-						<li>@error</li>
+					<li>@error</li>
 					}
 				</ul>
 				<div asp-validation-summary="ModelOnly" />
@@ -26,26 +26,31 @@
 					<input type="text" asp-for="Login" />
 					<span asp-validation-for="Login" class="text-danger" />
 				</div>
-
-				<div class="form-group">
-					<label class="field-labels" asp-for="Level">уровень доступа:</label>
-					<input type="number" asp-for="Level" />
-					<span asp-validation-for="Level" class="text-danger" />
+				<h4>уровень доступа:</h4>
+				@*<div class="form-group">
+			<label class="field-labels" asp-for="Level">уровень доступа:</label>
+				<input type="number" asp-for="Level" />
+			<span asp-validation-for="Level" class="text-danger" />
+		</div>*@
+				<div class="text-center">
+					<button class="btn bg-primary" type="submit" name="level" value="1">только добавление программ</button>
+				</div>
+				<div class="text-center">
+					<button class="btn bg-primary" type="submit" name="level" value="2">добавление и управление программами</button>
+				</div>
+				<div class="text-center">
+					<button class="btn bg-primary" type="submit" name="level" value="22">администратор</button>
 				</div>
 
-				<div class="container-login100-form-btn">
+				@*<div class="container-login100-form-btn">
 					<button class="btn btn-primary" type="submit">
 						подтвердить
 					</button>
-				</div>
+				</div>*@
 
 			</form>
 		</div>
 	</div>
-</div>
-
-<div>
-	<a asp-action="Index">Back to List</a>
 </div>
 
 @section Scripts {

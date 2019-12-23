@@ -14,8 +14,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Web_practice.Models.Pages.Task;
 using Web_practice.Models.DB;
-using Web_practice.Models.Pages.Account;
-using Web_practice.Models.Pages;
 using Web_practice.Utilities;
 
 
@@ -28,25 +26,42 @@ namespace Web_practice.Controllers
 
 		public TaskController(DataContext _dataContext,
 			IDataProtectionProvider provider,
-			IHostingEnvironment _appEnvironment)
+			IHostingEnvironment appEnvironment)
 		{
 			ProtectData.GetInstance().Initialize(provider);
 			dataContext = _dataContext;
-			environment = MyEnvironment.GetInstance(dataContext);
+			string env = appEnvironment.WebRootPath + "\\data\\";
+			environment = MyEnvironment.GetInstance(dataContext, env);
 		}
 		private int GetUserId()
 		{
-			return Int32.Parse(HttpContext.User.Identity.Name);
+			if (HttpContext.User.Identity.IsAuthenticated)
+				return Int32.Parse(HttpContext.User.Identity.Name);
+			else
+				return 0;
 		}
 
 		private int GetTaskId()
 		{
-			return Int32.Parse(HttpContext.User.Claims.ToArray()[1].Value);
+			if (HttpContext.User.Identity.IsAuthenticated)
+			{
+				var arr = HttpContext.User.Claims.ToArray();
+				if (arr.Length > 1)
+					return Int32.Parse(arr[1].Value);
+			}
+			return 0;
+			//return Int32.Parse(HttpContext.User.Claims.ToArray()[1].Value);
 		}
 
 		private int GetAccessLevel()
 		{
-			return Int32.Parse(HttpContext.User.Claims.Last().Value);
+			if (HttpContext.User.Identity.IsAuthenticated)
+			{
+				if (HttpContext.User.Claims.Count() > 2)
+					return Int32.Parse(HttpContext.User.Claims.Last().Value);
+			}
+			return 1;
+			//return Int32.Parse(HttpContext.User.Claims.Last().Value);
 		}
 
 
@@ -58,6 +73,7 @@ namespace Web_practice.Controllers
 			return View(new AdditionTaskModel());
 		}
 
+		[Authorize]
 		[HttpPost]
 		public IActionResult AdditionTask(AdditionTaskModel model)
 		{
@@ -106,6 +122,7 @@ namespace Web_practice.Controllers
 		#endregion
 
 		#region Task
+		[Authorize]
 		[HttpGet]
 		public async Task<IActionResult> OpenTask(string taskIdEncode)
 		{
@@ -151,7 +168,7 @@ namespace Web_practice.Controllers
 				return Redirect("Task");
 			}
 
-
+		[Authorize]
 		[HttpGet]
 		public IActionResult Task()
 		{
@@ -195,14 +212,18 @@ namespace Web_practice.Controllers
 			return View(model);
 		}
 
-
+		[Authorize]
 		[HttpPost]
 		public async Task<IActionResult> TaskDelete()
 		{
 			var taskId = GetTaskId();
 			var task = dataContext.Tasks.FirstOrDefault(i => i.Id == taskId);
+			
 			if (task == null)
 				return Redirect("~/Account/Profile");
+			var userID = GetUserId();
+			if (task.User_id != userID)
+				return await AccessDeleteByTask(taskId, userID);
 			await environment.Delete(task);
 			dataContext.SaveChanges();
 			return Redirect("~/Account/Profile");
@@ -211,6 +232,7 @@ namespace Web_practice.Controllers
 		#endregion
 
 		#region Access settings
+		[Authorize]
 		[HttpGet]
 		public IActionResult TaskSettings()
 		{
@@ -230,16 +252,18 @@ namespace Web_practice.Controllers
 		}
 
 
+		[Authorize]
 		[HttpGet]
 		public IActionResult AdditionAccess()
 		{
 			return View(new AdditionAccessModel());
 		}
 
+		[Authorize]
 		[HttpPost]
-		public IActionResult AdditionAccess(AdditionAccessModel model)
+		public IActionResult AdditionAccess(AdditionAccessModel model, string level)
 		{
-
+			var accessLevel = Int32.Parse(level);
 			if (ModelState.IsValid)
 			{
 				int ownUserId = GetUserId();
@@ -285,19 +309,23 @@ namespace Web_practice.Controllers
 		}
 
 
+		[Authorize]
 		[HttpGet]
 		public IActionResult AccessChange(string accessIdEncode)
 		{
 			return View(new AccessChangeModel(accessIdEncode));
 		}
 
+		[Authorize]
 		[HttpPost]
 		public IActionResult AccessChange(AccessChangeModel model, string accessIdEncode)
 		{
 			
 			if (ModelState.IsValid)
 			{
-				var accessId = Int32.Parse(ProtectData.GetInstance().DecodeToString(accessIdEncode));
+				var arr = accessIdEncode.Split();
+				var accessId = Int32.Parse(ProtectData.GetInstance().DecodeToString(arr[0]));
+				var level = Int32.Parse(arr[1]);
 				var access = dataContext.TaskAccesses.FirstOrDefault(i => i.Id == accessId);
 
 				if (access == null)
@@ -306,7 +334,7 @@ namespace Web_practice.Controllers
 				}
 				else
 				{
-					access.Level = model.Level;
+					access.Level = level;
 
 					try
 					{
@@ -324,7 +352,7 @@ namespace Web_practice.Controllers
 			return View(model);
 		}
 
-
+		[Authorize]
 		[HttpPost]
 		public async Task<IActionResult> AccessDelete(string accessIdEncode)
 		{
@@ -339,10 +367,25 @@ namespace Web_practice.Controllers
 
 			return Redirect("Task");
 		}
+
+		[Authorize]
+		[HttpPost]
+		public async Task<IActionResult> AccessDeleteByTask(int task, int user)
+		{
+			var access = dataContext.TaskAccesses.FirstOrDefault(i => i.Task_id == task
+			&& i.User_id == user);
+
+			if (access == null)
+				return Redirect("~/Account/Profile");
+			await environment.Delete(access);
+			dataContext.SaveChanges();
+
+			return Redirect("~/Account/Profile");
+		}
 		#endregion
 
 		#region Test
-
+		[Authorize]
 		[HttpGet]
 		public IActionResult AdditionTest()
 		{
@@ -350,6 +393,7 @@ namespace Web_practice.Controllers
 			return View(new AdditionTestModel());
 		}
 
+		[Authorize]
 		[HttpPost]
 		public IActionResult AdditionTest(AdditionTestModel model)
 		{
@@ -404,6 +448,7 @@ namespace Web_practice.Controllers
 			return Redirect("Task");
 		}
 
+		[Authorize]
 		[HttpGet]
 		public IActionResult Test(string testIdEncode)
 		{
@@ -422,6 +467,7 @@ namespace Web_practice.Controllers
 			return View(model);
 		}
 
+		[Authorize]
 		[HttpPost]
 		public IActionResult TestDelete(string testIdEncode)
 		{
@@ -445,7 +491,7 @@ namespace Web_practice.Controllers
 		#endregion
 
 		#region Executable
-
+		[Authorize]
 		[HttpGet]
 		public IActionResult AdditionExecutable()
 		{
@@ -453,6 +499,7 @@ namespace Web_practice.Controllers
 			return View(new AdditionExecutableModel());
 		}
 
+		[Authorize]
 		[HttpPost]
 		public IActionResult AdditionExecutable(AdditionExecutableModel model)
 		{
@@ -489,7 +536,7 @@ namespace Web_practice.Controllers
 			return Redirect("Task");
 		}
 
-
+		[Authorize]
 		[HttpGet]
 		public IActionResult Executable(string exeIdEncode)
 		{
@@ -507,7 +554,7 @@ namespace Web_practice.Controllers
 				statistic = reader.ReadToEnd();
 				reader.Close();
 				isCalculated = !(new FileInfo(environment.Env + exe.Path_exe)).Exists;
-			} catch (Exception e)
+			} catch
 			{
 
 			}
@@ -522,6 +569,7 @@ namespace Web_practice.Controllers
 			return View(model);
 		}
 
+		[Authorize]
 		[HttpPost]
 		public async Task<IActionResult> ExecutableDelete(string exeIdEncode)
 		{
@@ -536,6 +584,7 @@ namespace Web_practice.Controllers
 			return Redirect("Task");
 		}
 
+		[Authorize]
 		[HttpGet]
 		public IActionResult Result(string resIdEncode)
 		{

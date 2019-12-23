@@ -21,12 +21,13 @@ namespace Web_practice.Utilities
 {
 	public class MyEnvironment
 	{
-		public static MyEnvironment GetInstance(DataContext dataContext)
+		public static MyEnvironment GetInstance(DataContext dataContext, string env)
 		{
+			if (instance == null)
+				instance = new MyEnvironment(env);
 			instance.dataContext = dataContext;
 			return instance;
 		}
-
 		public static MyEnvironment GetInstance()
 		{
 			return instance;
@@ -83,7 +84,8 @@ namespace Web_practice.Utilities
 				{
 					file.Delete();
 				}
-				catch (UnauthorizedAccessException e)
+				//catch (UnauthorizedAccessException e)
+				catch
 				{
 					file.Delete();
 				}
@@ -99,7 +101,8 @@ namespace Web_practice.Utilities
 					file.Delete();
 					return true;
 				}
-				catch (Exception e)
+				//catch (Exception e)
+				catch
 				{
 					return false;
 				}
@@ -112,7 +115,12 @@ namespace Web_practice.Utilities
 			var results = (from exe in executables
 							  join res in dataContext.Results on exe.Id equals res.Exe_id
 							  select res);
-			dataContext.Results.RemoveRange(results);
+			try
+			{
+				if (results.Count() > 0)
+					dataContext.Results.RemoveRange(results);
+			}
+			catch { }
 			dataContext.Exeсutables.RemoveRange(executables);
 		}
 
@@ -120,7 +128,9 @@ namespace Web_practice.Utilities
 		{
 			await Executor.GetInstance().Delete(executable);
 			var file = new FileInfo(Env + executable.Path_stat);
-			dataContext.Results.RemoveRange(dataContext.Results.Where(i => i.Exe_id == executable.Id));
+			var results = dataContext.Results.Where(i => i.Exe_id == executable.Id);
+			if (results.Count() > 0)
+				dataContext.Results.RemoveRange(results);
 			dataContext.Exeсutables.Remove(executable);
 			DeleteDirectory(file.Directory);
 		}
@@ -140,7 +150,8 @@ namespace Web_practice.Utilities
 			var executables = dataContext.Exeсutables.Where(i => i.Task_id == access.Task_id
 			&& i.User_id == access.User_id);
 			var task = dataContext.Tasks.Single(i => i.Id == access.Task_id);
-			await RemoveExecutables(executables);
+			if (executables.Count() > 0)
+				await RemoveExecutables(executables);
 			
 			dataContext.TaskAccesses.Remove(access);
 			DeleteDirectory($"{task.User_id}\\{task.Title}\\executables\\{access.User_id}");
@@ -161,11 +172,25 @@ namespace Web_practice.Utilities
 			var executables = dataContext.Exeсutables.Where(i => i.Task_id == task.Id);
 			var accesses = dataContext.TaskAccesses.Where(i => i.Task_id == task.Id);
 			var tests = dataContext.Tests.Where(i => i.Task_id == task.Id);
+			try
+			{
+				if (executables.Count() > 0)
+					await RemoveExecutables(executables);
+			}
+			catch { }
+			try
+			{
+				if (accesses.Count() > 0)
+					dataContext.TaskAccesses.RemoveRange(accesses);
+			}
+			catch { }
+			try
+			{
+				if (tests.Count() > 0)
+					dataContext.Tests.RemoveRange(tests);
+			}
+			catch { }
 
-			
-			await RemoveExecutables(executables);
-			dataContext.TaskAccesses.RemoveRange(accesses);
-			dataContext.Tests.RemoveRange(tests);
 			dataContext.Tasks.Remove(task);
 			DeleteDirectory($"{task.User_id}\\{task.Title}");
 		}
@@ -183,10 +208,24 @@ namespace Web_practice.Utilities
 						 join test in dataContext.Tests on task.Id equals test.Task_id
 						 select test);
 
-			
-			await RemoveExecutables(executables);
-			dataContext.TaskAccesses.RemoveRange(accesses);
-			dataContext.Tests.RemoveRange(tests);
+			try
+			{
+				if (executables.Count() > 0)
+					await RemoveExecutables(executables);
+			}
+			catch { }
+			try
+			{
+				if (accesses.Count() > 0)
+					dataContext.TaskAccesses.RemoveRange(accesses);
+			}
+			catch { }
+			try
+			{
+				if (tests.Count() > 0)
+					dataContext.Tests.RemoveRange(tests);
+			}
+			catch { }
 			dataContext.Tasks.RemoveRange(tasks);
 		}
 
@@ -203,10 +242,12 @@ namespace Web_practice.Utilities
 								Task = task
 							});
 			
-
-			await RemoveExecutables(executables);
-			Delete(accessesDelete);
-			await Delete(tasks);
+			if (executables.Count() > 0)
+				await RemoveExecutables(executables);
+			if (accessesDelete.Count() > 0)
+				Delete(accessesDelete);
+			if (tasks.Count() > 0)
+				await Delete(tasks);
 			dataContext.Users.Remove(user);
 			DeleteDirectory(user.Id.ToString());
 		}
